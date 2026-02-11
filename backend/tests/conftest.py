@@ -15,7 +15,8 @@ from sqlalchemy.ext.asyncio import (
 from sqlalchemy.pool import StaticPool
 
 from naruu_core.models.base import NaruuBase
-from naruu_core.models.user import User  # noqa: F401 — metadata 등록 필수
+from naruu_core.models.partner import Partner, PartnerService  # noqa: F401
+from naruu_core.models.user import User  # noqa: F401
 
 
 # -- SQLite 기반 테스트 DB (PostgreSQL 불필요) --
