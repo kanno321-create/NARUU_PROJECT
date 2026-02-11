@@ -8,6 +8,7 @@ from typing import Any
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from naruu_core.event_bus import Event, EventBus
 from naruu_core.models.content import Content, ContentSchedule
 from naruu_core.plugins.content.pipeline.base import StageHandler
 from naruu_core.plugins.content.pipeline.script_generator import ScriptGenerator
@@ -38,8 +39,13 @@ STAGE_HANDLERS: dict[str, type[StageHandler] | None] = {
 class ContentCRUD:
     """콘텐츠 CRUD + 파이프라인 오퍼레이션."""
 
-    def __init__(self, session: AsyncSession) -> None:
+    def __init__(
+        self,
+        session: AsyncSession,
+        event_bus: EventBus | None = None,
+    ) -> None:
         self._session = session
+        self._event_bus = event_bus
 
     # -- Content --
 
@@ -145,6 +151,20 @@ class ContentCRUD:
 
         await self._session.commit()
         await self._session.refresh(content)
+
+        # 이벤트 발행
+        if self._event_bus is not None:
+            await self._event_bus.publish(Event(
+                event_type="content.pipeline.advanced",
+                data={
+                    "content_id": content.id,
+                    "from_stage": current,
+                    "to_stage": content.pipeline_stage,
+                    "cost_usd": content.cost_usd,
+                },
+                source="content_service",
+            ))
+
         return content
 
     # -- Schedule --

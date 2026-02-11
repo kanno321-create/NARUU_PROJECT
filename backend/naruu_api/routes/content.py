@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from naruu_api.deps import get_db_session
@@ -176,12 +176,12 @@ async def update_schedule(
     return _schedule_resp(schedule)
 
 
-@router.delete("/schedules/{schedule_id}", status_code=204)
+@router.delete("/schedules/{schedule_id}")
 async def delete_schedule(
     schedule_id: str,
     _user: dict = Depends(get_current_user),
     session: AsyncSession = Depends(get_db_session),
-) -> None:
+) -> Response:
     """스케줄 삭제."""
     crud = ContentCRUD(session)
     deleted = await crud.delete_schedule(schedule_id)
@@ -190,3 +190,4 @@ async def delete_schedule(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="스케줄을 찾을 수 없습니다.",
         )
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

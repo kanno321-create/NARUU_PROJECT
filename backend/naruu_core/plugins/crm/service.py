@@ -5,6 +5,7 @@ from __future__ import annotations
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from naruu_core.event_bus import Event, EventBus
 from naruu_core.models.customer import Booking, Customer, Interaction
 from naruu_core.plugins.crm.schemas import (
     BookingCreate,
@@ -18,8 +19,13 @@ from naruu_core.plugins.crm.schemas import (
 class CrmCRUD:
     """CRM CRUD 오퍼레이션."""
 
-    def __init__(self, session: AsyncSession) -> None:
+    def __init__(
+        self,
+        session: AsyncSession,
+        event_bus: EventBus | None = None,
+    ) -> None:
         self._session = session
+        self._event_bus = event_bus
 
     # -- Customer --
 
@@ -36,6 +42,18 @@ class CrmCRUD:
         self._session.add(customer)
         await self._session.commit()
         await self._session.refresh(customer)
+
+        if self._event_bus is not None:
+            await self._event_bus.publish(Event(
+                event_type="customer.created",
+                data={
+                    "customer_id": customer.id,
+                    "line_user_id": customer.line_user_id or "",
+                    "display_name": customer.display_name,
+                },
+                source="crm_service",
+            ))
+
         return customer
 
     async def get_customer(self, customer_id: str) -> Customer | None:
@@ -122,10 +140,27 @@ class CrmCRUD:
         booking = await self.get_booking(booking_id)
         if booking is None:
             return None
+        old_status = booking.status
         for field, value in data.model_dump(exclude_unset=True).items():
             setattr(booking, field, value)
         await self._session.commit()
         await self._session.refresh(booking)
+
+        if (
+            self._event_bus is not None
+            and old_status != booking.status
+        ):
+            await self._event_bus.publish(Event(
+                event_type="booking.status_changed",
+                data={
+                    "booking_id": booking.id,
+                    "customer_id": booking.customer_id,
+                    "old_status": old_status,
+                    "new_status": booking.status,
+                },
+                source="crm_service",
+            ))
+
         return booking
 
     # -- Interaction --

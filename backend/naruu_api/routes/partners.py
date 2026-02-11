@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from naruu_api.deps import get_db_session
@@ -110,12 +110,12 @@ async def update_partner(
     return _partner_to_response(partner)
 
 
-@router.delete("/{partner_id}", status_code=204)
+@router.delete("/{partner_id}")
 async def delete_partner(
     partner_id: str,
     _user: dict = Depends(get_current_user),
     session: AsyncSession = Depends(get_db_session),
-) -> None:
+) -> Response:
     """거래처 삭제."""
     crud = PartnerCRUD(session)
     deleted = await crud.delete_partner(partner_id)
@@ -123,6 +123,7 @@ async def delete_partner(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="거래처를 찾을 수 없습니다."
         )
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 # -- Service CRUD --
@@ -204,12 +205,12 @@ async def update_service(
     )
 
 
-@router.delete("/services/{service_id}", status_code=204)
+@router.delete("/services/{service_id}")
 async def delete_service(
     service_id: str,
     _user: dict = Depends(get_current_user),
     session: AsyncSession = Depends(get_db_session),
-) -> None:
+) -> Response:
     """서비스 삭제."""
     crud = PartnerCRUD(session)
     deleted = await crud.delete_service(service_id)
@@ -217,3 +218,4 @@ async def delete_service(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="서비스를 찾을 수 없습니다."
         )
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

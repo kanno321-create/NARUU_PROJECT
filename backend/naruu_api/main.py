@@ -10,7 +10,7 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from naruu_api.deps import get_naruu_settings, get_plugin_manager
+from naruu_api.deps import get_event_bus, get_naruu_settings, get_plugin_manager
 from naruu_api.routes import (
     auth,
     content,
@@ -22,12 +22,45 @@ from naruu_api.routes import (
     recommend,
 )
 from naruu_core.db import close_database, init_database
+from naruu_core.event_bus import Event
 
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
 )
 logger = logging.getLogger(__name__)
+
+
+async def _on_pipeline_advanced(event: Event) -> None:
+    """콘텐츠 파이프라인 진행 이벤트 핸들러."""
+    data = event.data
+    logger.info(
+        "파이프라인 진행: %s → %s (cost=$%.4f)",
+        data.get("from_stage"),
+        data.get("to_stage"),
+        data.get("cost_usd", 0.0),
+    )
+
+
+async def _on_customer_created(event: Event) -> None:
+    """신규 고객 생성 이벤트 핸들러."""
+    data = event.data
+    logger.info(
+        "신규 고객: %s (%s)",
+        data.get("display_name"),
+        data.get("line_user_id", ""),
+    )
+
+
+async def _on_booking_status_changed(event: Event) -> None:
+    """예약 상태 변경 이벤트 핸들러."""
+    data = event.data
+    logger.info(
+        "예약 상태 변경: %s → %s (booking=%s)",
+        data.get("old_status"),
+        data.get("new_status"),
+        data.get("booking_id"),
+    )
 
 
 @asynccontextmanager
@@ -53,6 +86,16 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
             len(discovered),
             ", ".join(p.name for p in discovered) or "없음",
         )
+
+    # 이벤트 구독 등록
+    event_bus = get_event_bus()
+    event_bus.subscribe(
+        "content.pipeline.advanced", _on_pipeline_advanced,
+    )
+    event_bus.subscribe("customer.created", _on_customer_created)
+    event_bus.subscribe(
+        "booking.status_changed", _on_booking_status_changed,
+    )
 
     logger.info(
         "%s v%s 시작 — 플러그인 %d개 등록",
