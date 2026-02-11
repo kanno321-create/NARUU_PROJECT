@@ -18,6 +18,9 @@ class NaruuSettings(BaseSettings):
 
     # AI
     anthropic_api_key: str = ""
+    ai_model: str = "claude-sonnet-4-5-20250929"
+    ai_max_tokens: int = 2048
+    ai_script_temperature: float = 0.7
 
     # DB
     database_url: str = ""

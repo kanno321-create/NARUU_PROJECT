@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import pytest
+import respx
+from httpx import Response
 from pydantic import ValidationError
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
@@ -111,7 +113,7 @@ class TestContentPlugin:
 
     def test_plugin_version(self) -> None:
         plugin = ContentPlugin()
-        assert plugin.version == "0.1.0"
+        assert plugin.version == "0.2.0"
 
     def test_plugin_capabilities(self) -> None:
         plugin = ContentPlugin()
@@ -271,28 +273,46 @@ class TestContentCRUD:
 class TestPipelineAdvance:
     """파이프라인 단계 진행 테스트."""
 
+    @respx.mock
     async def test_advance_full_pipeline(
         self, db_session: AsyncSession,
     ) -> None:
         """전체 파이프라인 순서대로 진행."""
+        respx.post("https://api.anthropic.com/v1/messages").mock(
+            return_value=Response(200, json={
+                "content": [{"type": "text", "text": "test script"}],
+                "usage": {"input_tokens": 10, "output_tokens": 20},
+            })
+        )
+        config = {"anthropic_api_key": "sk-test-key"}
+
         crud = ContentCRUD(db_session)
         c = await crud.create_content(ContentCreate(title="Pipeline Test"))
         assert c.pipeline_stage == "pending"
 
         for expected_next in PIPELINE_ORDER[1:]:
-            c = await crud.advance_pipeline(c.id)
+            c = await crud.advance_pipeline(c.id, config=config)
             assert c is not None
             assert c.pipeline_stage == expected_next
 
+    @respx.mock
     async def test_advance_at_done_stays_done(
         self, db_session: AsyncSession,
     ) -> None:
         """done 단계에서 더 이상 진행 불가."""
+        respx.post("https://api.anthropic.com/v1/messages").mock(
+            return_value=Response(200, json={
+                "content": [{"type": "text", "text": "test script"}],
+                "usage": {"input_tokens": 10, "output_tokens": 20},
+            })
+        )
+        config = {"anthropic_api_key": "sk-test-key"}
+
         crud = ContentCRUD(db_session)
         c = await crud.create_content(ContentCreate(title="Done Test"))
         # pending → script → image → voice → video → publish → done
         for _ in range(6):
-            c = await crud.advance_pipeline(c.id)
+            c = await crud.advance_pipeline(c.id, config=config)
         assert c is not None
         assert c.pipeline_stage == "done"
 

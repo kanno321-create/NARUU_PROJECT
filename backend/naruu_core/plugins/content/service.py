@@ -2,10 +2,15 @@
 
 from __future__ import annotations
 
+import logging
+from typing import Any
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from naruu_core.models.content import Content, ContentSchedule
+from naruu_core.plugins.content.pipeline.base import StageHandler
+from naruu_core.plugins.content.pipeline.script_generator import ScriptGenerator
 from naruu_core.plugins.content.schemas import (
     ContentCreate,
     ContentUpdate,
@@ -13,10 +18,21 @@ from naruu_core.plugins.content.schemas import (
     ScheduleUpdate,
 )
 
+logger = logging.getLogger(__name__)
+
 # 파이프라인 단계 순서
 PIPELINE_ORDER = [
     "pending", "script", "image", "voice", "video", "publish", "done",
 ]
+
+# 단계별 AI 핸들러 맵 — 핸들러가 없는 단계는 단순 진행
+STAGE_HANDLERS: dict[str, type[StageHandler] | None] = {
+    "script": ScriptGenerator,
+    "image": None,    # Phase 4: DALL-E
+    "voice": None,    # Phase 4: VOICEVOX
+    "video": None,    # Phase 4: FFmpeg
+    "publish": None,  # Phase 4: YouTube API
+}
 
 
 class ContentCRUD:
@@ -75,16 +91,58 @@ class ContentCRUD:
         await self._session.refresh(content)
         return content
 
-    async def advance_pipeline(self, content_id: str) -> Content | None:
-        """파이프라인 다음 단계로 진행."""
+    async def advance_pipeline(
+        self,
+        content_id: str,
+        config: dict[str, Any] | None = None,
+    ) -> Content | None:
+        """파이프라인 다음 단계로 진행.
+
+        현재 단계에 AI 핸들러가 있으면 실행 후 결과에 따라 진행.
+        핸들러가 없으면 단순 단계 이동.
+        """
         content = await self.get_content(content_id)
         if content is None:
             return None
+
         current = content.pipeline_stage
-        if current in PIPELINE_ORDER:
-            idx = PIPELINE_ORDER.index(current)
-            if idx < len(PIPELINE_ORDER) - 1:
-                content.pipeline_stage = PIPELINE_ORDER[idx + 1]
+        if current not in PIPELINE_ORDER:
+            return content
+
+        idx = PIPELINE_ORDER.index(current)
+        if idx >= len(PIPELINE_ORDER) - 1:
+            return content  # 이미 done
+
+        # 현재 단계에 AI 핸들러가 있는지 확인
+        handler_cls = STAGE_HANDLERS.get(current)
+        if handler_cls is not None:
+            handler = handler_cls()
+            result = await handler.execute(content, config or {})
+
+            if result.success:
+                content.pipeline_stage = result.next_stage
+                content.cost_usd += result.cost_usd
+                # 생성된 데이터 반영
+                if "script" in result.data:
+                    content.script = result.data["script"]
+                logger.info(
+                    "파이프라인 AI 단계 완료: %s → %s (cost=$%.4f)",
+                    current,
+                    result.next_stage,
+                    result.cost_usd,
+                )
+            else:
+                content.pipeline_stage = "failed"
+                content.error_message = result.error
+                logger.warning(
+                    "파이프라인 AI 단계 실패: %s → failed (%s)",
+                    current,
+                    result.error,
+                )
+        else:
+            # 핸들러 없는 단계 → 단순 진행
+            content.pipeline_stage = PIPELINE_ORDER[idx + 1]
+
         await self._session.commit()
         await self._session.refresh(content)
         return content
