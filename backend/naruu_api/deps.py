@@ -58,6 +58,20 @@ async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
         yield session
 
 
+async def get_standalone_session() -> AsyncGenerator[AsyncSession, None]:
+    """웹훅 핸들러용 독립 DB 세션.
+
+    FastAPI Depends 밖에서 DB 접근이 필요할 때 사용.
+    DB 미설정 시 빈 제너레이터 (세션 없이 진행).
+    """
+    try:
+        db = get_database()
+        async with db.session() as session:
+            yield session
+    except Exception:
+        yield None  # type: ignore[misc]
+
+
 def reset_all() -> None:
     """테스트용 전역 상태 리셋."""
     global _event_bus, _plugin_manager, _orchestrator, _settings

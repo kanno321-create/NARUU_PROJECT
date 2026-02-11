@@ -129,7 +129,7 @@ class TestCrmPlugin:
         assert "customer.create" in caps
         assert "booking.list" in caps
         assert "line.send" in caps
-        assert len(caps) == 11
+        assert len(caps) == 12
 
     async def test_plugin_execute(self) -> None:
         plugin = CrmPlugin()
