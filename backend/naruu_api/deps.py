@@ -2,7 +2,12 @@
 
 from __future__ import annotations
 
+from collections.abc import AsyncGenerator
+
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from naruu_core.config import NaruuSettings, get_settings
+from naruu_core.db import get_database
 from naruu_core.event_bus import EventBus
 from naruu_core.orchestrator import Orchestrator
 from naruu_core.plugin_manager import PluginManager
@@ -44,6 +49,13 @@ def get_naruu_settings() -> NaruuSettings:
     if _settings is None:
         _settings = get_settings()
     return _settings
+
+
+async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
+    """DB 세션 의존성. DB 미설정 시 None 반환하지 않고 에러."""
+    db = get_database()
+    async with db.session() as session:
+        yield session
 
 
 def reset_all() -> None:

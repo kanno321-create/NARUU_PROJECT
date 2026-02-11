@@ -19,6 +19,10 @@ class NaruuSettings(BaseSettings):
     # AI
     anthropic_api_key: str = ""
 
+    # DB
+    database_url: str = ""
+    db_echo: bool = False
+
     # 플러그인
     plugin_dir: str = "naruu_core/plugins"
     auto_discover_plugins: bool = True

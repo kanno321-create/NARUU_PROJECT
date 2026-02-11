@@ -5,7 +5,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from naruu_core.plugins.base import NaruuPlugin
@@ -31,7 +31,7 @@ class Plugin(NaruuPlugin):
 
     async def initialize(self, config: dict[str, Any]) -> None:
         self._config = config
-        self._initialized_at = datetime.now(timezone.utc)
+        self._initialized_at = datetime.now(UTC)
 
     async def execute(self, command: str, payload: dict[str, Any]) -> dict[str, Any]:
         if command == "echo":
@@ -43,7 +43,7 @@ class Plugin(NaruuPlugin):
             return {
                 "status": "ok",
                 "pong": True,
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
         if command == "info":
             return {

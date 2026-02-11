@@ -3,15 +3,16 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import AsyncGenerator
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from naruu_api.deps import get_naruu_settings, get_plugin_manager
 from naruu_api.routes import health, plugins
+from naruu_core.db import close_database, init_database
 
 logging.basicConfig(
     level=logging.INFO,
@@ -25,6 +26,15 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """앱 시작/종료 시 플러그인 자동 디스커버리."""
     settings = get_naruu_settings()
     pm = get_plugin_manager()
+
+    # DB 초기화 (URL 설정된 경우만)
+    if settings.database_url:
+        db = init_database(settings.database_url)
+        connected = await db.test_connection()
+        if connected:
+            logger.info("DB 연결 성공.")
+        else:
+            logger.warning("DB 연결 실패. DB 없이 계속 실행합니다.")
 
     if settings.auto_discover_plugins:
         plugin_dir = Path(__file__).parent.parent / settings.plugin_dir
@@ -49,7 +59,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         plugin = pm.get(info.name)
         if plugin:
             await plugin.shutdown()
-    logger.info("서버 종료. 모든 플러그인 정리 완료.")
+    await close_database()
+    logger.info("서버 종료. 모든 플러그인 및 DB 정리 완료.")
 
 
 def create_app() -> FastAPI:

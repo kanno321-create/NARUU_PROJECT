@@ -1,6 +1,6 @@
 [project]
 name = "naruu-platform"
-version = "0.1.0"
+version = "0.2.0"
 description = "NARUU AI Tourism Platform — 모듈식 플러그인 아키텍처"
 requires-python = ">=3.12"
 
@@ -8,13 +8,29 @@ requires-python = ">=3.12"
 asyncio_mode = "auto"
 testpaths = ["tests"]
 pythonpath = ["."]
+markers = [
+    "unit: 유닛 테스트 (빠름, 격리)",
+    "integration: 통합 테스트 (DB 필요)",
+    "e2e: 엔드투엔드 테스트 (전체 서비스)",
+    "smoke: 스모크 테스트 (빠른 검증)",
+    "requires_db: PostgreSQL 필요",
+]
+addopts = "-q --strict-markers --tb=short"
+
+[tool.coverage.run]
+source = ["naruu_core", "naruu_api"]
+
+[tool.coverage.report]
+fail_under = 60
+show_missing = true
 
 [tool.ruff]
 target-version = "py312"
 line-length = 100
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "W"]
+select = ["E", "F", "I", "W", "B", "C4", "UP"]
+ignore = ["B008"]
 
 [tool.mypy]
 python_version = "3.12"
