@@ -23,6 +23,10 @@ class NaruuSettings(BaseSettings):
     database_url: str = ""
     db_echo: bool = False
 
+    # JWT
+    jwt_secret: str = ""
+    jwt_expire_minutes: int = 60
+
     # 플러그인
     plugin_dir: str = "naruu_core/plugins"
     auto_discover_plugins: bool = True

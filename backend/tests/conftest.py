@@ -12,9 +12,10 @@ from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
     create_async_engine,
 )
-from sqlalchemy.pool import NullPool
+from sqlalchemy.pool import StaticPool
 
 from naruu_core.models.base import NaruuBase
+from naruu_core.models.user import User  # noqa: F401 — metadata 등록 필수
 
 
 # -- SQLite 기반 테스트 DB (PostgreSQL 불필요) --
@@ -27,7 +28,7 @@ async def db_engine() -> AsyncGenerator[AsyncEngine, None]:
     """테스트용 인메모리 SQLite 엔진. 함수마다 새 DB."""
     engine = create_async_engine(
         TEST_DB_URL,
-        poolclass=NullPool,
+        poolclass=StaticPool,
     )
     async with engine.begin() as conn:
         await conn.run_sync(NaruuBase.metadata.create_all)
@@ -58,5 +59,8 @@ def _reset_deps() -> None:
     from naruu_api.deps import reset_all
     from naruu_core.db import reset_database
 
+    from naruu_core.auth.middleware import reset_jwt_handler
+
     reset_all()
     reset_database()
+    reset_jwt_handler()
