@@ -11,7 +11,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from naruu_api.deps import get_naruu_settings, get_plugin_manager
-from naruu_api.routes import auth, health, partners, plugins
+from naruu_api.routes import auth, crm, health, line_webhook, partners, plugins
 from naruu_core.db import close_database, init_database
 
 logging.basicConfig(
@@ -84,6 +84,8 @@ def create_app() -> FastAPI:
     app.include_router(health.router, prefix=settings.api_prefix)
     app.include_router(auth.router, prefix=settings.api_prefix)
     app.include_router(partners.router, prefix=settings.api_prefix)
+    app.include_router(crm.router, prefix=settings.api_prefix)
+    app.include_router(line_webhook.router, prefix=settings.api_prefix)
     app.include_router(plugins.router, prefix=settings.api_prefix)
 
     return app

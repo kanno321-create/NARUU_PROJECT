@@ -27,6 +27,10 @@ class NaruuSettings(BaseSettings):
     jwt_secret: str = ""
     jwt_expire_minutes: int = 60
 
+    # LINE Messaging API
+    line_channel_secret: str = ""
+    line_channel_access_token: str = ""
+
     # 플러그인
     plugin_dir: str = "naruu_core/plugins"
     auto_discover_plugins: bool = True

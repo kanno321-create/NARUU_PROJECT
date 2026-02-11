@@ -15,6 +15,7 @@ from sqlalchemy.ext.asyncio import (
 from sqlalchemy.pool import StaticPool
 
 from naruu_core.models.base import NaruuBase
+from naruu_core.models.customer import Booking, Customer, Interaction  # noqa: F401
 from naruu_core.models.partner import Partner, PartnerService  # noqa: F401
 from naruu_core.models.user import User  # noqa: F401
 
@@ -62,6 +63,9 @@ def _reset_deps() -> None:
 
     from naruu_core.auth.middleware import reset_jwt_handler
 
+    from naruu_api.routes.line_webhook import reset_line_client
+
     reset_all()
     reset_database()
     reset_jwt_handler()
+    reset_line_client()
