@@ -1,14 +1,10 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 function getToken(): string | null {
-  if (typeof window === 'undefined') return null;
   return localStorage.getItem('naruu_token');
 }
 
-async function request<T>(
-  path: string,
-  options: RequestInit = {},
-): Promise<T> {
+async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const token = getToken();
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -19,15 +15,12 @@ async function request<T>(
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const res = await fetch(`${API_URL}${path}`, {
-    ...options,
-    headers,
-  });
+  const res = await fetch(`${API_URL}${path}`, { ...options, headers });
 
   if (res.status === 401) {
     localStorage.removeItem('naruu_token');
     localStorage.removeItem('naruu_user');
-    window.location.href = '/login';
+    window.location.hash = '#/login';
     throw new Error('Unauthorized');
   }
 
@@ -42,13 +35,10 @@ async function request<T>(
 
 export const api = {
   get: <T>(path: string) => request<T>(path),
-
   post: <T>(path: string, body: unknown) =>
     request<T>(path, { method: 'POST', body: JSON.stringify(body) }),
-
   put: <T>(path: string, body: unknown) =>
     request<T>(path, { method: 'PUT', body: JSON.stringify(body) }),
-
   delete: <T>(path: string) =>
     request<T>(path, { method: 'DELETE' }),
 };

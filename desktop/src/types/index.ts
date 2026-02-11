@@ -1,4 +1,3 @@
-// Customer types
 export interface Customer {
   id: string;
   code: string;
@@ -28,7 +27,6 @@ export interface Customer {
   updated_at: string;
 }
 
-// Partner types
 export interface Partner {
   id: string;
   code: string;
@@ -59,7 +57,6 @@ export interface ServiceItem {
   description?: string;
 }
 
-// Product types
 export interface Product {
   id: string;
   code: string;
@@ -97,7 +94,6 @@ export interface ItineraryItem {
   location?: string;
 }
 
-// Booking types
 export interface Booking {
   id: string;
   booking_no: string;
@@ -120,7 +116,6 @@ export interface Booking {
   updated_at: string;
 }
 
-// List response
 export interface ListResponse<T> {
   items: T[];
   total: number;
@@ -128,16 +123,9 @@ export interface ListResponse<T> {
   page_size: number;
 }
 
-// Auth types
 export interface User {
   id: string;
   email: string;
   name: string;
   role: string;
-}
-
-export interface LoginResponse {
-  access_token: string;
-  token_type: string;
-  user: User;
 }
