@@ -1,0 +1,86 @@
+{
+  "common": {
+    "appName": "NARUU",
+    "tagline": "大邱医療・美容・観光総合AIプラットフォーム",
+    "login": "ログイン",
+    "logout": "ログアウト",
+    "save": "保存",
+    "cancel": "キャンセル",
+    "delete": "削除",
+    "edit": "編集",
+    "create": "新規作成",
+    "search": "検索",
+    "loading": "読み込み中...",
+    "noData": "データがありません",
+    "confirm": "確認",
+    "back": "戻る",
+    "next": "次へ",
+    "previous": "前へ"
+  },
+  "nav": {
+    "dashboard": "ダッシュボード",
+    "customers": "顧客管理",
+    "partners": "取引先管理",
+    "products": "観光商品",
+    "bookings": "予約管理",
+    "sales": "営業管理",
+    "schedules": "スケジュール",
+    "venues": "場所DB",
+    "accounting": "会計",
+    "marketing": "マーケティング",
+    "line": "LINE",
+    "settings": "設定"
+  },
+  "dashboard": {
+    "title": "ダッシュボード",
+    "todayBookings": "本日の予約",
+    "monthlyRevenue": "今月の売上",
+    "newInquiries": "新規問い合わせ",
+    "activeCustomers": "アクティブ顧客"
+  },
+  "customers": {
+    "title": "顧客管理",
+    "addCustomer": "顧客追加",
+    "name": "氏名",
+    "email": "メールアドレス",
+    "phone": "電話番号",
+    "lineId": "LINE ID",
+    "vipLevel": "VIPレベル",
+    "source": "流入元",
+    "totalBookings": "予約回数",
+    "totalSpent": "累計金額"
+  },
+  "partners": {
+    "title": "取引先管理",
+    "addPartner": "取引先追加",
+    "category": "カテゴリ",
+    "commission": "手数料率",
+    "contact": "担当者",
+    "contract": "契約期間"
+  },
+  "products": {
+    "title": "観光商品",
+    "addProduct": "商品追加",
+    "type": "商品タイプ",
+    "duration": "所要期間",
+    "price": "料金",
+    "participants": "参加人数"
+  },
+  "bookings": {
+    "title": "予約管理",
+    "addBooking": "予約追加",
+    "bookingNo": "予約番号",
+    "customer": "顧客",
+    "tourDate": "ツアー日",
+    "status": "ステータス",
+    "payment": "決済",
+    "guide": "ガイド"
+  },
+  "auth": {
+    "loginTitle": "NARUUにログイン",
+    "email": "メールアドレス",
+    "password": "パスワード",
+    "loginButton": "ログイン",
+    "loginError": "メールアドレスまたはパスワードが正しくありません"
+  }
+}
