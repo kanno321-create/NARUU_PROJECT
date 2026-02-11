@@ -4,15 +4,14 @@ from __future__ import annotations
 
 import hashlib
 import hmac
-import json
 from base64 import b64encode
-from datetime import datetime, timezone
 
 import pytest
-from sqlalchemy import select, text
+from pydantic import ValidationError
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 
-from naruu_core.models.customer import Booking, Customer, Interaction
+from naruu_core.models.customer import Customer
 from naruu_core.plugins.crm.line_client import LineClient
 from naruu_core.plugins.crm.plugin import Plugin as CrmPlugin
 from naruu_core.plugins.crm.schemas import (
@@ -23,7 +22,6 @@ from naruu_core.plugins.crm.schemas import (
     InteractionCreate,
 )
 from naruu_core.plugins.crm.service import CrmCRUD
-
 
 # ── Unit 테스트: CRM 스키마 ──
 
@@ -42,7 +40,7 @@ class TestCrmSchemas:
 
     def test_customer_create_invalid_language(self) -> None:
         """유효하지 않은 언어 코드."""
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             CustomerCreate(display_name="Test", language="zh")
 
     def test_booking_create_valid(self) -> None:
@@ -63,7 +61,7 @@ class TestCrmSchemas:
 
     def test_booking_update_status_invalid(self) -> None:
         """유효하지 않은 예약 상태."""
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             BookingUpdate(status="unknown")
 
     def test_interaction_create_valid(self) -> None:

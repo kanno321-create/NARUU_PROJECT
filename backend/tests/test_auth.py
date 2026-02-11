@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import time
-
 import jwt as pyjwt
 import pytest
 from sqlalchemy import select, text
@@ -153,7 +151,7 @@ class TestUserModel:
         await db_session.commit()
 
         db_session.add(user2)
-        with pytest.raises(Exception):  # IntegrityError
+        with pytest.raises(Exception):  # noqa: B017 — IntegrityError
             await db_session.commit()
 
     async def test_user_default_role(self, db_session: AsyncSession) -> None:

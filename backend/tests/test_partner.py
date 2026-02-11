@@ -5,10 +5,10 @@ from __future__ import annotations
 from decimal import Decimal
 
 import pytest
-from sqlalchemy import select, text
+from pydantic import ValidationError
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 
-from naruu_core.models.partner import Partner, PartnerService
 from naruu_core.plugins.partner.plugin import Plugin as PartnerPlugin
 from naruu_core.plugins.partner.schemas import (
     PartnerCreate,
@@ -17,7 +17,6 @@ from naruu_core.plugins.partner.schemas import (
     ServiceUpdate,
 )
 from naruu_core.plugins.partner.service import PartnerCRUD
-
 
 # ── Unit 테스트: 스키마 검증 ──
 
@@ -35,7 +34,7 @@ class TestPartnerSchemas:
 
     def test_partner_create_invalid_category(self) -> None:
         """유효하지 않은 카테고리."""
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             PartnerCreate(name_ja="Test", category="invalid")
 
     def test_partner_update_partial(self) -> None:
@@ -52,12 +51,12 @@ class TestPartnerSchemas:
 
     def test_service_create_invalid_price(self) -> None:
         """음수 가격 불허."""
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             ServiceCreate(name_ja="Test", price_krw=-100, duration_minutes=60)
 
     def test_service_create_invalid_duration(self) -> None:
         """0분 이하 또는 1440분 초과 불허."""
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             ServiceCreate(name_ja="Test", price_krw=100, duration_minutes=0)
 
 

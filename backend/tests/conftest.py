@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-import asyncio
-from typing import AsyncGenerator
+from collections.abc import AsyncGenerator
 
 import pytest
 from sqlalchemy.ext.asyncio import (
@@ -15,10 +14,11 @@ from sqlalchemy.ext.asyncio import (
 from sqlalchemy.pool import StaticPool
 
 from naruu_core.models.base import NaruuBase
+from naruu_core.models.content import Content, ContentSchedule  # noqa: F401
 from naruu_core.models.customer import Booking, Customer, Interaction  # noqa: F401
 from naruu_core.models.partner import Partner, PartnerService  # noqa: F401
+from naruu_core.models.recommendation import Spot  # noqa: F401
 from naruu_core.models.user import User  # noqa: F401
-
 
 # -- SQLite 기반 테스트 DB (PostgreSQL 불필요) --
 
@@ -59,11 +59,9 @@ async def db_session(db_engine: AsyncEngine) -> AsyncGenerator[AsyncSession, Non
 def _reset_deps() -> None:
     """매 테스트마다 DI 싱글턴 리셋."""
     from naruu_api.deps import reset_all
-    from naruu_core.db import reset_database
-
-    from naruu_core.auth.middleware import reset_jwt_handler
-
     from naruu_api.routes.line_webhook import reset_line_client
+    from naruu_core.auth.middleware import reset_jwt_handler
+    from naruu_core.db import reset_database
 
     reset_all()
     reset_database()
