@@ -1,6 +1,6 @@
 -- NARUU AI Tourism Platform - Initial Schema Migration
 -- 12 tables in `naruu` schema
--- Run against Supabase PostgreSQL
+-- Run against any PostgreSQL 14+
 
 -- ============================================================
 -- Schema creation

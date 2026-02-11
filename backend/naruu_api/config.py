@@ -20,11 +20,6 @@ class Config:
     # Database
     DATABASE_URL: str = ""
 
-    # Supabase
-    SUPABASE_URL: str = ""
-    SUPABASE_ANON_KEY: str = ""
-    SUPABASE_SERVICE_ROLE_KEY: str = ""
-
     # Application
     APP_ENV: str = "development"
     APP_PORT: int = 8000
@@ -111,10 +106,6 @@ class Config:
         self.DEEPL_API_KEY = os.getenv("DEEPL_API_KEY", "")
         self.EXCHANGE_RATE_API_KEY = os.getenv("EXCHANGE_RATE_API_KEY", "")
         self.CORS_ORIGINS = os.getenv("CORS_ORIGINS", "")
-
-        self.SUPABASE_URL = os.getenv("SUPABASE_URL", "")
-        self.SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY", "")
-        self.SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
 
     def _validate_config(self) -> None:
         if not self.DATABASE_URL.startswith("postgres"):

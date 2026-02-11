@@ -1,6 +1,6 @@
 """
 NARUU Tourism Platform - Database Module
-Async SQLAlchemy connection using asyncpg for PostgreSQL (Supabase)
+Async SQLAlchemy connection using asyncpg for PostgreSQL
 """
 
 from typing import AsyncGenerator
