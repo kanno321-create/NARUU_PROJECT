@@ -1,0 +1,11 @@
+[Make Pipeline — Notes]
+Trigger: Google Sheets 'Naruu_*_Topics' 새 행(status=new)
+→ OpenAI: 시나리오 JSON 생성(meta/script/tts/image_prompts/subtitles)
+→ TTS(11Labs): ja-JP female warm, 0.95x
+→ Image Gen(Leonardo/Runway): AnimeRealMix, 장소 간판 보이는 프롬프트
+→ Composer(JSON2Video): 9:16, 1080x1920, SRT 싱크
+→ Drive Export: Naruu_Outputs/{Series}/Naruu_{Series}_{Episode}.mp4
+→ Notify: Slack #naruu-alert (파일 링크)
+
+Editables: title, lines(ja/ko), voice_preset, CTA, branding_slot
+Status Flow: new → rendering → done (영상 링크 기록)

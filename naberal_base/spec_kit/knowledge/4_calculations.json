@@ -1,0 +1,503 @@
+{
+  "meta": {
+    "name": "calculations_knowledge_consolidated",
+    "version": "1.0.0",
+    "created_at_utc+09": "2025-11-18T00:00:00+09:00",
+    "description": "계산식 지식 통합: E.T/N.T/N.P/BUS-BAR/COATING/P-COVER/잡자재비/조립비 등 모든 계산 공식",
+    "sources": [
+      "견적요령.txt (CEO 작성 계산식 문서)",
+      "ai_estimation_core.json (rules.labor_and_misc + rules.busbar sections)",
+      "견적서장성법V1.0.txt (필수 자재 조건 7)"
+    ],
+    "locale": "ko-KR",
+    "units": {
+      "length": "mm",
+      "weight": "kg",
+      "price": "KRW (원)",
+      "quantity": "EA"
+    }
+  },
+
+  "earth_terminal": {
+    "item_id": "E.T",
+    "description": "접지 단자 (Earth Terminal)",
+    "spec": "없음 (규격 없음)",
+    "unit": "EA",
+    "quantity_formula": {
+      "description": "차단기 총수량 기준 계산",
+      "formula": "(차단기_총수량 ÷ 12) + 1 (소수점 반올림)",
+      "examples": [
+        {
+          "breaker_count": 11,
+          "calculation": "(11 ÷ 12) + 1 = 0.91 + 1 = 1.91 → 2개",
+          "quantity": 2
+        },
+        {
+          "breaker_count": 12,
+          "calculation": "(12 ÷ 12) + 1 = 1 + 1 = 2개",
+          "quantity": 2
+        },
+        {
+          "breaker_count": 24,
+          "calculation": "(24 ÷ 12) + 1 = 2 + 1 = 3개",
+          "quantity": 3
+        },
+        {
+          "breaker_count": 36,
+          "calculation": "(36 ÷ 12) + 1 = 3 + 1 = 4개",
+          "quantity": 4
+        }
+      ],
+      "rule": "12개당 1개 추가"
+    },
+    "price_by_main_breaker_AF": {
+      "50_to_125AF": 4500,
+      "200_to_250AF": 5500,
+      "400AF": 12000,
+      "600_to_800AF": 18000
+    },
+    "notes": "메인차단기 AF 기준 단가 결정"
+  },
+
+  "neutral_terminal": {
+    "item_id": "N.T",
+    "description": "중성선 단자 (Neutral Terminal)",
+    "spec": "없음 (규격 없음)",
+    "unit": "EA",
+    "quantity_formula": {
+      "description": "고정값",
+      "formula": "1 (분전반당 1개)",
+      "quantity": 1
+    },
+    "price": 3000,
+    "notes": "분전반 1면당 N.T 1개 고정"
+  },
+
+  "name_plate": {
+    "item_id": "N.P",
+    "description": "명판 (Name Plate)",
+    "components": [
+      {
+        "item_id": "CARD_HOLDER",
+        "spec": "CARD HOLDER",
+        "unit": "EA",
+        "quantity_formula": {
+          "description": "분기차단기 총수량과 동일",
+          "formula": "분기차단기_총수량",
+          "notes": "메인차단기는 제외, 분기차단기만 카운트"
+        },
+        "price": 800
+      },
+      {
+        "item_id": "NAME_PLATE_BASE",
+        "spec": "3T×40×200",
+        "unit": "EA",
+        "quantity_formula": {
+          "description": "고정값",
+          "formula": "1 (분전반당 1개)",
+          "quantity": 1
+        },
+        "price": 4000
+      }
+    ],
+    "total_cost_formula": "(분기차단기_총수량 × 800) + 4000"
+  },
+
+  "main_busbar": {
+    "item_id": "MAIN BUS-BAR",
+    "description": "주부스바 (Main Busbar)",
+    "purpose": "메인차단기 → 분기부스바 전류 공급",
+    "unit": "KG",
+    "spec_by_main_breaker_AF": {
+      "50_to_125AF": "3T×15",
+      "200_to_250AF": "5T×20",
+      "400AF": "6T×30",
+      "600_to_800AF": "8T×40"
+    },
+    "weight_formula": {
+      "description": "외함 크기 기반 중량 계산",
+      "formula": "(W × H) × coefficient",
+      "coefficient_by_main_breaker_ampere": {
+        "20_to_250A": 0.000007,
+        "300_to_400A": 0.000013,
+        "500_to_800A": 0.000015
+      },
+      "examples": [
+        {
+          "enclosure_size": "600×400mm",
+          "main_ampere": 200,
+          "coefficient": 0.000007,
+          "calculation": "(600 × 400) × 0.000007 = 240000 × 0.000007 = 1.68kg",
+          "weight_kg": 1.68
+        },
+        {
+          "enclosure_size": "800×600mm",
+          "main_ampere": 400,
+          "coefficient": 0.000013,
+          "calculation": "(800 × 600) × 0.000013 = 480000 × 0.000013 = 6.24kg",
+          "weight_kg": 6.24
+        },
+        {
+          "enclosure_size": "900×800mm",
+          "main_ampere": 600,
+          "coefficient": 0.000015,
+          "calculation": "(900 × 800) × 0.000015 = 720000 × 0.000015 = 10.8kg",
+          "weight_kg": 10.8
+        }
+      ]
+    },
+    "price_formula": {
+      "description": "중량 기반 가격 계산 (원자재 시세 변동 - 대표님 알림 시 조정)",
+      "formula": "weight(kg) × 31000",
+      "unit_price_per_kg": 31000,
+      "last_updated": "2026-02-06",
+      "examples": [
+        {
+          "weight_kg": 1.68,
+          "calculation": "1.68 × 31000 = 52,080원",
+          "price": 52080
+        },
+        {
+          "weight_kg": 6.24,
+          "calculation": "6.24 × 31000 = 193,440원",
+          "price": 193440
+        },
+        {
+          "weight_kg": 10.8,
+          "calculation": "10.8 × 31000 = 334,800원",
+          "price": 334800
+        }
+      ]
+    },
+    "notes": "메인차단기 AF 기준 스펙 결정, 외함 크기 및 메인 암페어 기준 중량 계산"
+  },
+
+  "branch_busbar": {
+    "item_id": "BUS-BAR",
+    "description": "분기부스바 (Branch Busbar)",
+    "purpose": "주부스바 → 분기차단기 전류 분배",
+    "unit": "KG",
+    "spec_selection": {
+      "description": "분기차단기 중 AF 가장 높은 것 기준",
+      "rule": "분기차단기 최대 AF 기준 스펙 적용",
+      "by_max_branch_AF": {
+        "up_to_100AF": "3T×15",
+        "125_to_250AF": "5T×20",
+        "300_to_400AF": "6T×30",
+        "500_to_800AF": "8T×40"
+      },
+      "examples": [
+        {
+          "branch_breakers": ["SBE-52 (50AF 30A)", "SBE-102 (100AF 60A)", "SBS-202 (200AF 125A)"],
+          "max_AF": "200AF",
+          "spec": "5T×20"
+        }
+      ]
+    },
+    "weight_formula": {
+      "description": "MAIN BUS-BAR와 다른 계수 사용! (대표님 정의 - 부스바 산출공식.txt)",
+      "formula": "(W × H) × coefficient",
+      "coefficient_by_main_breaker_ampere": {
+        "20_to_250A": 0.0000045,
+        "300_to_400A": 0.000007,
+        "500_to_800A": 0.000009
+      },
+      "comparison_with_main_busbar": {
+        "20_to_250A": "64% of main (0.0000045 vs 0.000007)",
+        "300_to_400A": "54% of main (0.000007 vs 0.000013)",
+        "500_to_800A": "60% of main (0.000009 vs 0.000015)"
+      },
+      "examples": [
+        {
+          "enclosure_size": "600×700mm",
+          "main_ampere": 75,
+          "coefficient": 0.0000045,
+          "calculation": "(600 × 700) × 0.0000045 = 420000 × 0.0000045 = 1.89kg",
+          "weight_kg": 1.89
+        }
+      ]
+    },
+    "price_formula": {
+      "description": "중량 기반 가격 계산 (원자재 시세 변동 - 대표님 알림 시 조정)",
+      "formula": "weight(kg) × 31000",
+      "unit_price_per_kg": 31000,
+      "last_updated": "2026-02-06"
+    },
+    "notes": "중요: 분기 부스바 계수는 메인과 다름! 메인차단기 용량 기준 계수 선택, 분기차단기 최대 AF 기준 규격 선택"
+  },
+
+  "coating": {
+    "item_id": "COATING",
+    "description": "부스바 절연 코팅 (PVC Coating)",
+    "spec": "PVC(20mm)",
+    "unit": "M",
+    "quantity_formula": {
+      "description": "고정값",
+      "formula": "1 (분전반당 1M)",
+      "quantity": 1
+    },
+    "price": 5000,
+    "notes": "부스바 절연 보호용 PVC 코팅"
+  },
+
+  "p_cover": {
+    "item_id": "P-COVER",
+    "description": "보호 커버 (Protection Cover)",
+    "purpose": "차단기 명판 및 배선 보호",
+    "unit": "EA",
+    "quantity_formula": {
+      "description": "분전반 수량과 동일",
+      "formula": "1면 외함 내 분전반 총수량",
+      "notes": "분전반 1면당 P-COVER 1개"
+    },
+    "material_types": {
+      "acrylic": {
+        "material": "아크릴(PC) - Polycarbonate",
+        "spec": "PC 투명",
+        "transparency": true,
+        "default": true,
+        "price_formula": {
+          "description": "외함 크기 기반 가격 계산",
+          "formula": "((W × H) ÷ 90000) × 3200",
+          "examples": [
+            {
+              "enclosure_size": "600×400mm",
+              "calculation": "((600 × 400) ÷ 90000) × 3200 = (240000 ÷ 90000) × 3200 = 2.67 × 3200 = 8,544원",
+              "price": 8544
+            },
+            {
+              "enclosure_size": "800×600mm",
+              "calculation": "((800 × 600) ÷ 90000) × 3200 = (480000 ÷ 90000) × 3200 = 5.33 × 3200 = 17,056원",
+              "price": 17056
+            }
+          ]
+        }
+      },
+      "steel": {
+        "material": "STEEL 불투명",
+        "spec": "STEEL 1.6T",
+        "transparency": false,
+        "use_case": "고보안 시설, 시각적 차폐 필요 시",
+        "price_formula": {
+          "description": "외함 크기 기반 가격 계산 (아크릴 대비 3.9배)",
+          "formula": "((W × H) ÷ 90000) × 12500",
+          "examples": [
+            {
+              "enclosure_size": "600×400mm",
+              "calculation": "((600 × 400) ÷ 90000) × 12500 = (240000 ÷ 90000) × 12500 = 2.67 × 12500 = 33,375원",
+              "price": 33375
+            },
+            {
+              "enclosure_size": "800×600mm",
+              "calculation": "((800 × 600) ÷ 90000) × 12500 = (480000 ÷ 90000) × 12500 = 5.33 × 12500 = 66,625원",
+              "price": 66625
+            }
+          ]
+        }
+      }
+    },
+    "notes": "아크릴(PC)이 기본, STEEL은 고보안 시설 또는 요청 시"
+  },
+
+  "breaker_support": {
+    "item_id": "차단기지지대",
+    "description": "차단기 지지대 (Breaker Support)",
+    "purpose": "대형 메인차단기(400AF 이상) 고정 지지",
+    "spec": "없음 (규격 없음)",
+    "unit": "EA",
+    "applicable_condition": "메인차단기 400AF 이상만",
+    "quantity_formula": {
+      "description": "분기차단기 총길이 기반 계산",
+      "formula": "(분기차단기_총길이 ÷ 35) + 2 (소수점 반올림)",
+      "examples": [
+        {
+          "branch_total_length": 350,
+          "calculation": "(350 ÷ 35) + 2 = 10 + 2 = 12개",
+          "quantity": 12
+        },
+        {
+          "branch_total_length": 280,
+          "calculation": "(280 ÷ 35) + 2 = 8 + 2 = 10개",
+          "quantity": 10
+        }
+      ],
+      "rule": "35mm당 1개 + 기본 2개"
+    },
+    "price": 1200,
+    "notes": "400AF 이상 메인차단기에서만 존재, 크기가 커서 지지대 필수"
+  },
+
+  "elb_support": {
+    "item_id": "ELB지지대",
+    "description": "누전차단기 지지대 (ELB Support)",
+    "purpose": "소형차단기 고정 지지",
+    "spec": "없음 (규격 없음)",
+    "unit": "EA",
+    "applicable_condition": "소형차단기(SIE-32, SIB-32, 32GRHS, BS-32)만",
+    "quantity_formula": {
+      "description": "소형차단기 총수량과 동일",
+      "formula": "소형차단기_총수량",
+      "examples": [
+        {
+          "small_breakers": ["SIE-32 20A (2개)", "SIB-32 30A (3개)", "32GRHS 20A (1개)"],
+          "calculation": "2 + 3 + 1 = 6개",
+          "quantity": 6
+        }
+      ]
+    },
+    "price": 500,
+    "notes": "소형차단기(SIE-32, SIB-32, 32GRHS, BS-32) 전용 지지대"
+  },
+
+  "insulator": {
+    "item_id": "INSULATOR",
+    "description": "절연 지지대 (Insulator)",
+    "purpose": "부스바 절연 및 고정",
+    "spec": "EPOXY 40×40",
+    "unit": "EA",
+    "quantity_formula": {
+      "description": "MAIN BUS-BAR용 지지대 기준 계산",
+      "formula": "MAIN BUS-BAR용 지지대 총합 × 4 (일반적으로 4개)",
+      "examples": [
+        {
+          "busbar_supports": 1,
+          "calculation": "1 × 4 = 4개",
+          "quantity": 4,
+          "notes": "일반적인 경우"
+        },
+        {
+          "busbar_supports": 2,
+          "calculation": "2 × 4 = 8개",
+          "quantity": 8,
+          "notes": "대형 외함 또는 복잡한 배선"
+        }
+      ]
+    },
+    "price_by_main_breaker_AF": {
+      "50_to_250AF": 1100,
+      "400_to_800AF": 4400
+    },
+    "notes": "메인차단기 AF 기준 단가 결정, MAIN BUS-BAR 지지대 수량 × 4"
+  },
+
+  "misc_materials": {
+    "item_id": "잡자재비",
+    "description": "기타 자재비 (Miscellaneous Materials)",
+    "spec": "없음 (규격 없음)",
+    "unit": "식",
+    "quantity_formula": {
+      "description": "고정값",
+      "formula": "1 (분전반당 1식)",
+      "quantity": 1
+    },
+    "price_formula": {
+      "description": "외함 높이 및 부속자재 수량 기반 가격 계산",
+      "formula": "기본값(7000) + H증가분 + 부속자재증가분",
+      "base_price": 7000,
+      "h_increment": {
+        "description": "외함 H값 100mm 증가마다 +1000원",
+        "formula": "floor((H - 기준H) / 100) × 1000",
+        "examples": [
+          {
+            "enclosure_height": 600,
+            "base_height": 400,
+            "calculation": "floor((600 - 400) / 100) × 1000 = floor(200 / 100) × 1000 = 2 × 1000 = +2000원",
+            "h_increment": 2000
+          },
+          {
+            "enclosure_height": 850,
+            "base_height": 400,
+            "calculation": "floor((850 - 400) / 100) × 1000 = floor(450 / 100) × 1000 = 4 × 1000 = +4000원",
+            "h_increment": 4000
+          }
+        ]
+      },
+      "accessory_increment": {
+        "description": "부속자재 1개 추가마다 +10000원",
+        "formula": "부속자재_총수량 × 10000",
+        "examples": [
+          {
+            "accessories": ["마그네트 2개", "타이머 1개", "V/A-METER 1개"],
+            "total_count": 4,
+            "calculation": "4 × 10000 = +40000원",
+            "accessory_increment": 40000
+          }
+        ]
+      },
+      "max_price": 40000,
+      "examples": [
+        {
+          "base": 7000,
+          "enclosure_height": 600,
+          "h_increment": 2000,
+          "accessories": 2,
+          "accessory_increment": 20000,
+          "calculation": "7000 + 2000 + 20000 = 29000원",
+          "total": 29000
+        },
+        {
+          "base": 7000,
+          "enclosure_height": 850,
+          "h_increment": 4000,
+          "accessories": 5,
+          "accessory_increment": 50000,
+          "calculation": "7000 + 4000 + 50000 = 61000원 → 40000원 (최대값)",
+          "total": 40000,
+          "notes": "최대값 40000원 적용"
+        }
+      ]
+    },
+    "notes": "기본 7000원, H 100mm마다 +1000원, 부속자재 1개마다 +10000원, 최대 40000원"
+  },
+
+  "assembly_charge": {
+    "item_id": "ASSEMBLY CHARGE",
+    "description": "조립비 (Assembly Charge)",
+    "spec": "없음 (규격 없음)",
+    "unit": "식",
+    "quantity_formula": {
+      "description": "고정값",
+      "formula": "1 (분전반당 1식)",
+      "quantity": 1
+    },
+    "price_formula": {
+      "description": "인건비 계산식 (외함 크기 및 차단기 수량 기반)",
+      "base_calculation": "기본_인건비 + H증가분 - 소형차단기_감소분",
+      "base_labor_cost": {
+        "description": "차단기 총수량 기준 기본 인건비",
+        "formula": "차단기_총수량 × 기본_단가",
+        "unit_price": "차단기당 인건비 (단가표 참조)"
+      },
+      "h_increment": {
+        "description": "외함 H값 100mm 증가마다 인건비 증가",
+        "formula": "floor((H - 기준H) / 100) × 인건비_증가분"
+      },
+      "small_breaker_discount": {
+        "description": "소형차단기는 인건비 감소",
+        "formula": "소형차단기_수량 × 인건비_감소분",
+        "applicable_breakers": ["SIE-32", "SIB-32", "32GRHS", "BS-32"],
+        "notes": "소형차단기는 설치가 쉬워 인건비 감소"
+      },
+      "notes": "구체적인 계산식은 ai_estimation_core.json의 rules.labor_and_misc 참조"
+    },
+    "notes": "외함 크기 및 차단기 수량 기반 인건비 계산"
+  },
+
+  "provenance": {
+    "consolidated_from": [
+      "견적요령.txt (CEO 작성 계산식 문서)",
+      "ai_estimation_core.json (v1.2.0, 2025-09-10, rules.labor_and_misc + rules.busbar)",
+      "견적서장성법V1.0.txt (v1.00, 2025-08-25, 필수 자재 조건 7)"
+    ],
+    "consolidation_date": "2025-11-18",
+    "author": "Narberal Gamma (NABERAL KIS Estimator AI)",
+    "review_status": "CEO approval required",
+    "version_history": [
+      {
+        "version": "1.0.0",
+        "date": "2025-11-18",
+        "changes": "Initial consolidated version with all calculation formulas"
+      }
+    ]
+  }
+}

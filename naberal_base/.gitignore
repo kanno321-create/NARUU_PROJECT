@@ -1,0 +1,73 @@
+# Windows reserved filename (git 오류 방지)
+nul
+**/nul
+
+# Python cache
+__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+.mypy_cache/
+
+# ═══════════════════════════════════════════════════
+# 임시 파일 패턴 (2026-02-07 추가)
+# ═══════════════════════════════════════════════════
+
+# 임시 결과 파일
+ctemp*
+*_result.json
+
+# 루트 레벨 분석/체크 스크립트
+/analyze_*.py
+/check_*.py
+/verify_*.py
+
+# 루트 레벨 테스트 파일
+/test_*.json
+/test-*.json
+/test_*.py
+/test_*.txt
+
+# 오래된 인수인계 문서 (WORK_HANDOFF.md는 유지)
+/HANDOVER.md
+/HANDOVER[0-9]*.md
+/HANDOVER_*.md
+/HANDOVERHOUSE.md
+
+# 오래된 작업 계획
+/WORK_PLAN_*.md
+/WORKPLAN_*.md
+
+# 학습/훈련 데이터
+/training_data_*.json
+/*_learning_*.json
+
+# 빌드 아티팩트
+/build/
+/tmp/
+/dist/
+frontend/dist/
+
+# 기타 임시 파일
+/debug_output.txt
+/file_list.json
+/openapi_temp.json
+/*_analysis.json
+
+# Rust build output (GitHub 100MB 제한 초과)
+**/target/
+
+# Egg info
+*.egg-info/
+
+# Node
+node_modules/
+
+# Environment files
+.env
+.env.local
+
+# Coverage
+.coverage
+.coverage_history.txt
+frontend/dist2/

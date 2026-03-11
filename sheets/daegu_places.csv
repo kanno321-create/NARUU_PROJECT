@@ -1,0 +1,4 @@
+# filename: sheets/daegu_places.csv
+Place_ID,Name,Category,ShortPoint,CelebrityOrDrama,Address,OpenHours,PhotoURL,Lang,Notes,Status
+DG001,제일숯불막창,Food,"콩가루 찍어먹는 막창, 숯향","아이유/효리네민박",대구 수성구 ...,17:00-02:30,https://.../makchang.jpg,ko,"셀럽 사인 벽/대기 有","active"
+DG002,계명대학교(대명),Spot,"고딕풍 캠퍼스 포토스팟","꽃남/미스터션샤인",대구 남구 ...,09:00-18:00,https://.../kms.jpg,ko,"주말 인파/촬영 포인트","active"

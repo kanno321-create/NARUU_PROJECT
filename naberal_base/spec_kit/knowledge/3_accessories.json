@@ -1,0 +1,739 @@
+{
+  "meta": {
+    "name": "accessories_knowledge_consolidated",
+    "version": "1.0.0",
+    "created_at_utc+09": "2025-11-18T00:00:00+09:00",
+    "description": "부속자재 지식 통합: 마그네트, 타이머, 계량기, 동반자재 BOM 규칙",
+    "sources": [
+      "부속자재.txt (CEO 작성 실무 문서)",
+      "ai_estimation_core.json (catalog.accessories section)",
+      "견적서장성법V1.0.txt (부속자재 조건 11)",
+      "중요ai단가표의_2.0V.csv"
+    ],
+    "locale": "ko-KR",
+    "units": {
+      "length": "mm",
+      "current": "A",
+      "price": "KRW (원)",
+      "power": "kW"
+    }
+  },
+
+  "categories": {
+    "magnet_contactors": {
+      "description": "전자 접촉기 (Magnetic Contactor)",
+      "purpose": "모터 제어, 전동기 구동",
+      "models": [
+        {
+          "model": "MC-9",
+          "capacity_A": 9,
+          "size_mm": [45, 50, 80],
+          "power_kW": {
+            "single_phase_220V": 2.2,
+            "three_phase_380V": 4.0
+          },
+          "price": 8500,
+          "notes": "소형 모터용"
+        },
+        {
+          "model": "MC-12",
+          "capacity_A": 12,
+          "size_mm": [45, 50, 80],
+          "power_kW": {
+            "single_phase_220V": 2.2,
+            "three_phase_380V": 5.5
+          },
+          "price": 9000
+        },
+        {
+          "model": "MC-18",
+          "capacity_A": 18,
+          "size_mm": [45, 50, 80],
+          "power_kW": {
+            "single_phase_220V": 3.7,
+            "three_phase_380V": 7.5
+          },
+          "price": 10000
+        },
+        {
+          "model": "MC-22",
+          "capacity_A": 22,
+          "size_mm": [45, 75, 85],
+          "power_kW": {
+            "single_phase_220V": 5.5,
+            "three_phase_380V": 11.0
+          },
+          "price": 12000,
+          "notes": "외함 높이 공식에 사용되는 예시 모델"
+        },
+        {
+          "model": "MC-32",
+          "capacity_A": 32,
+          "size_mm": [45, 75, 85],
+          "power_kW": {
+            "single_phase_220V": 7.5,
+            "three_phase_380V": 15.0
+          },
+          "price": 16000
+        },
+        {
+          "model": "MC-40",
+          "capacity_A": 40,
+          "size_mm": [60, 75, 95],
+          "power_kW": {
+            "single_phase_220V": 11.0,
+            "three_phase_380V": 18.5
+          },
+          "price": 22000
+        },
+        {
+          "model": "MC-50",
+          "capacity_A": 50,
+          "size_mm": [60, 82, 95],
+          "power_kW": {
+            "single_phase_220V": 15.0,
+            "three_phase_380V": 22.0
+          },
+          "price": 28000
+        },
+        {
+          "model": "MC-65",
+          "capacity_A": 65,
+          "size_mm": [60, 82, 95],
+          "power_kW": {
+            "single_phase_220V": 18.5,
+            "three_phase_380V": 30.0
+          },
+          "price": 36000
+        },
+        {
+          "model": "MC-75",
+          "capacity_A": 75,
+          "size_mm": [78, 100, 118],
+          "power_kW": {
+            "single_phase_220V": 22.0,
+            "three_phase_380V": 37.0
+          },
+          "price": 48000
+        },
+        {
+          "model": "MC-85",
+          "capacity_A": 85,
+          "size_mm": [78, 100, 118],
+          "power_kW": {
+            "single_phase_220V": 30.0,
+            "three_phase_380V": 45.0
+          },
+          "price": 56000
+        },
+        {
+          "model": "MC-100",
+          "capacity_A": 100,
+          "size_mm": [78, 100, 118],
+          "power_kW": {
+            "single_phase_220V": 37.0,
+            "three_phase_380V": 55.0
+          },
+          "price": 68000,
+          "notes": "대형 모터용"
+        }
+      ],
+      "mandatory_bundles": {
+        "description": "마그네트 1개당 필수 동반자재 (MANDATORY)",
+        "items": [
+          {
+            "item_id": "FUSEHOLDER",
+            "spec": "4/W",
+            "unit": "EA",
+            "qty_per_magnet": 1,
+            "price": 4000,
+            "notes": "퓨즈 홀더"
+          },
+          {
+            "item_id": "TERMINAL_BLOCK_600V",
+            "spec": "600V",
+            "unit": "EA",
+            "qty_per_magnet": 3,
+            "price": 4000,
+            "notes": "CRITICAL: 3개임 (1개 아님). sub_material_bundles.json에 1개로 잘못 기재됨"
+          },
+          {
+            "item_id": "PVC_DUCT_40",
+            "spec": "DUCT 40mm",
+            "unit": "EA",
+            "qty_per_magnet": 2,
+            "price": 3000,
+            "notes": "CRITICAL: 상단 1개 + 하단 1개 = 2개 (1개 아님)"
+          },
+          {
+            "item_id": "CABLE_WIRE",
+            "spec": "KIV",
+            "unit": "EA",
+            "qty_per_magnet": 2,
+            "price": 25000,
+            "notes": "CRITICAL: 2개임 (1식 아님). sub_material_bundles.json에 1개로 잘못 기재됨"
+          }
+        ],
+        "labor_cost_per_magnet": 20000,
+        "total_cost_per_magnet": "마그네트 가격 + FUSEHOLDER(4K) + TERMINAL_BLOCK(12K=4K×3) + PVC_DUCT(6K=3K×2) + CABLE_WIRE(50K=25K×2) + 인건비(20K)"
+      },
+      "optional_bundles": {
+        "pbl_switches": {
+          "description": "ON/OFF 스위치 필요 시",
+          "items": [
+            {
+              "item_id": "PBL_ON_OFF",
+              "spec": "ON/OFF",
+              "unit": "EA",
+              "qty_per_magnet": 2,
+              "price": 4000,
+              "notes": "마그네트 수량 × 2"
+            }
+          ]
+        }
+      }
+    },
+
+    "timers": {
+      "description": "타이머 (Timer)",
+      "purpose": "시간 제어, 자동 ON/OFF",
+      "models": [
+        {
+          "model": "ON-DELAY",
+          "type": "딜레이 타이머",
+          "size_mm": [22.5, 75, 100],
+          "price": 26000,
+          "function": "설정 시간 후 ON"
+        },
+        {
+          "model": "OFF-DELAY",
+          "type": "딜레이 타이머",
+          "size_mm": [22.5, 75, 100],
+          "price": 26000,
+          "function": "설정 시간 후 OFF"
+        },
+        {
+          "model": "STAR-DELTA",
+          "type": "스타-델타 타이머",
+          "size_mm": [22.5, 75, 100],
+          "price": 32000,
+          "function": "모터 기동 제어"
+        },
+        {
+          "model": "24H_TIMER",
+          "type": "24시간 타이머",
+          "size_mm": [65, 100, null],
+          "price": 26000,
+          "function": "24시간 주기 ON/OFF"
+        },
+        {
+          "model": "SUNSET_TIMER",
+          "type": "일몰 타이머",
+          "size_mm": [65, 102, null],
+          "price": 28000,
+          "function": "일몰 감지 자동 ON/OFF"
+        }
+      ],
+      "mandatory_bundles": {
+        "description": "타이머 1개당 필수 동반자재 (MANDATORY)",
+        "items": [
+          {
+            "item_id": "CABLE_WIRE",
+            "spec": "KIV",
+            "unit": "EA",
+            "qty_per_timer": 1,
+            "price": 25000
+          }
+        ],
+        "labor_cost_per_timer": 12000,
+        "total_cost_per_timer": "타이머 가격 + CABLE_WIRE(25K) + 인건비(12K)"
+      },
+      "optional_bundles": {
+        "pbl_with_timer": {
+          "description": "24H TIMER 사용 시 PBL 옵션",
+          "option_1": {
+            "description": "PBL 포함",
+            "items": [
+              {
+                "item_id": "PBL_ON_OFF",
+                "qty": "마그네트수량 × 2",
+                "price": 4000
+              },
+              {
+                "item_id": "24H_TIMER",
+                "qty": "도면상 타이머 수량",
+                "price": 26000
+              }
+            ]
+          },
+          "option_2": {
+            "description": "PBL 미포함",
+            "items": [
+              {
+                "item_id": "24H_TIMER",
+                "qty": "도면상 타이머 수량",
+                "price": 26000
+              }
+            ]
+          }
+        }
+      }
+    },
+
+    "meters": {
+      "v_a_meter": {
+        "description": "전압/전류계 (Voltmeter/Ammeter)",
+        "purpose": "전압 및 전류 측정 표시",
+        "components": [
+          {
+            "item_id": "V_A_METER",
+            "spec": "메인차단기 AF",
+            "unit": "EA",
+            "qty": 2,
+            "price": 24000,
+            "notes": "전압계 1개 + 전류계 1개"
+          },
+          {
+            "item_id": "VS_AS",
+            "spec": "변성기 (Voltage/Current Sensor)",
+            "unit": "EA",
+            "qty": 2,
+            "price": 12000
+          },
+          {
+            "item_id": "FUSEHOLDER",
+            "spec": "4/W",
+            "unit": "EA",
+            "qty": 3,
+            "price": 4000
+          },
+          {
+            "item_id": "TERMINAL_BLOCK_600V",
+            "spec": "600V",
+            "unit": "EA",
+            "qty": 2,
+            "price": 4000
+          },
+          {
+            "item_id": "PVC_DUCT",
+            "spec": "DUCT",
+            "unit": "EA",
+            "qty": 3,
+            "price": 3000
+          },
+          {
+            "item_id": "3CT_BUSBAR",
+            "spec": "메인차단기 AF별",
+            "unit": "EA",
+            "qty": 1,
+            "price": "단가표 참조",
+            "notes": "3CT 부스바용"
+          },
+          {
+            "item_id": "CABLE_WIRE",
+            "spec": "KIV",
+            "unit": "식",
+            "qty": 1,
+            "price": 30000
+          }
+        ],
+        "total_cost": "V/A-METER(48K) + VS/AS(24K) + FUSEHOLDER(12K) + TERMINAL_BLOCK(8K) + PVC_DUCT(9K) + 3CT(단가표) + CABLE_WIRE(30K)"
+      },
+
+      "energy_meters": {
+        "single_phase": {
+          "description": "단상 계량기",
+          "models": [
+            {
+              "model": "단상 40A",
+              "capacity_A": 40,
+              "phase": "1상 2선식",
+              "price": "단가표 참조",
+              "cable_wire_price": 15000
+            },
+            {
+              "model": "단상 80A",
+              "capacity_A": 80,
+              "phase": "1상 2선식",
+              "price": "단가표 참조",
+              "cable_wire_price": 15000
+            },
+            {
+              "model": "단상 120A",
+              "capacity_A": 120,
+              "phase": "1상 2선식",
+              "price": "단가표 참조",
+              "cable_wire_price": 15000
+            }
+          ],
+          "bundles": [
+            {
+              "item_id": "ENERGY_METER_1P",
+              "spec": "규격",
+              "unit": "EA",
+              "qty": "계량기 수량",
+              "price": "단가표 참조"
+            },
+            {
+              "item_id": "CABLE_WIRE",
+              "spec": "KIV",
+              "unit": "식",
+              "qty": "계량기 수량",
+              "price": 15000
+            }
+          ]
+        },
+
+        "three_phase": {
+          "description": "3상 계량기",
+          "models": [
+            {
+              "model": "3상 40A",
+              "capacity_A": 40,
+              "phase": "3상 4선식",
+              "price": "단가표 참조",
+              "cable_wire_price": 18000
+            },
+            {
+              "model": "3상 80A",
+              "capacity_A": 80,
+              "phase": "3상 4선식",
+              "price": "단가표 참조",
+              "cable_wire_price": 18000
+            },
+            {
+              "model": "3상 120A",
+              "capacity_A": 120,
+              "phase": "3상 4선식",
+              "price": "단가표 참조",
+              "cable_wire_price": 18000
+            }
+          ],
+          "bundles": [
+            {
+              "item_id": "ENERGY_METER_3P",
+              "spec": "규격",
+              "unit": "EA",
+              "qty": "계량기 수량",
+              "price": "단가표 참조"
+            },
+            {
+              "item_id": "CABLE_WIRE",
+              "spec": "KIV",
+              "unit": "식",
+              "qty": "계량기 수량",
+              "price": 18000,
+              "notes": "3상은 단상보다 3,000원 비쌈"
+            }
+          ]
+        },
+
+        "ct_meter": {
+          "description": "CT계량기 (Current Transformer Meter)",
+          "purpose": "대용량 전류 간접 측정",
+          "components": [
+            {
+              "item_id": "CT_METER",
+              "spec": "3상4선식",
+              "unit": "EA",
+              "qty": "계량기 수량",
+              "price": 23000
+            },
+            {
+              "item_id": "FUSEHOLDER",
+              "spec": "4/W",
+              "unit": "EA",
+              "qty": 3,
+              "price": 4000
+            },
+            {
+              "item_id": "TERMINAL_BLOCK_600V",
+              "spec": "600V",
+              "unit": "EA",
+              "qty": 1,
+              "price": 3000
+            },
+            {
+              "item_id": "3CT",
+              "spec": "계량 대상 차단기 프레임",
+              "unit": "EA",
+              "qty": "계량 대상 차단기 수량",
+              "price": "단가표 참조",
+              "notes": "메인차단기 AF별 단가 상이"
+            }
+          ],
+          "total_cost": "CT_METER(23K) + FUSEHOLDER(12K) + TERMINAL_BLOCK(3K) + 3CT(단가표×수량)"
+        }
+      }
+    },
+
+    "switches": {
+      "pbl": {
+        "description": "푸시버튼 스위치 (Push Button Switch)",
+        "models": [
+          {
+            "model": "PBL_ON_OFF",
+            "spec": "ON/OFF",
+            "type": "일반 스위치",
+            "unit": "EA",
+            "price": 4000,
+            "usage": "마그네트 ON/OFF 제어"
+          },
+          {
+            "model": "PBL_SS",
+            "spec": "SS (비상정지)",
+            "type": "비상정지 스위치",
+            "unit": "EA",
+            "price": 6000,
+            "color": "빨강",
+            "usage": "비상 정지"
+          }
+        ],
+        "enclosure_depth_effect": {
+          "default": 200,
+          "with_pbl": 250,
+          "notes": "PBL 포함 시 외함 깊이 250mm로 증가"
+        }
+      }
+    },
+
+    "spd": {
+      "description": "서지보호장치 (Surge Protective Device)",
+      "purpose": "낙뢰 및 서지 전압 보호",
+      "models": [
+        {
+          "model": "SPD_DIRECT_40kA",
+          "spec": "직결형 40kA",
+          "type": "직결형",
+          "capacity_kA": 40,
+          "unit": "EA",
+          "price": 50000
+        }
+      ],
+      "bundles": [
+        {
+          "item_id": "SPD_DIRECT_40kA",
+          "spec": "40kA",
+          "unit": "EA",
+          "qty": 1,
+          "price": 50000
+        },
+        {
+          "item_id": "CABLE_WIRE",
+          "spec": "KIV",
+          "unit": "식",
+          "qty": 1,
+          "price": 15000
+        }
+      ],
+      "total_cost": "SPD(50K) + CABLE_WIRE(15K) = 65K",
+      "default_breaker": {
+        "description": "SPD용 차단기 (자동 추가)",
+        "spec": "MCCB 4P 40A",
+        "variations": "고객 요청 시 30A, 50A로 변경 가능",
+        "annotation": "견적서 작성 시 모델명 옆에 'SPD용' 표기",
+        "example": "ABN-54 40A SPD용"
+      }
+    },
+
+    "terminals_and_misc": {
+      "fuseholder": {
+        "description": "퓨즈 홀더",
+        "spec": "4/W",
+        "unit": "EA",
+        "price": 4000,
+        "usage": "마그네트, 계량기, V/A-METER"
+      },
+      "terminal_block": {
+        "description": "단자대 (Terminal Block)",
+        "spec": "600V",
+        "unit": "EA",
+        "price": 4000,
+        "usage": "마그네트, 타이머, 계량기, V/A-METER"
+      },
+      "pvc_duct": {
+        "description": "PVC 덕트",
+        "spec": "40mm",
+        "unit": "EA",
+        "price": 3000,
+        "usage": "마그네트, V/A-METER",
+        "effect_on_enclosure": {
+          "width_reduction": 100,
+          "notes": "유효폭 -100mm (좌우 여유 각 30mm + 덕트 폭 40mm)"
+        }
+      },
+      "cable_wire": {
+        "description": "배선 케이블 (Cable/Wire)",
+        "spec": "KIV",
+        "unit": "EA 또는 식",
+        "price_range": {
+          "magnet": 25000,
+          "timer": 25000,
+          "meter_1p": 15000,
+          "meter_3p": 18000,
+          "v_a_meter": 30000,
+          "spd": 15000
+        },
+        "usage": "모든 부속자재"
+      }
+    }
+  },
+
+  "bundle_rules": {
+    "BND_MAGNET_BASE": {
+      "id": "BND_MAGNET_BASE",
+      "class": "MANDATORY",
+      "trigger": "마그네트 컨택터 추가 시",
+      "description": "마그네트 1개당 필수 동반자재 자동 추가",
+      "items": [
+        {
+          "item_id": "FUSEHOLDER",
+          "qty_per": 1,
+          "price": 4000
+        },
+        {
+          "item_id": "TERMINAL_BLOCK_600V",
+          "qty_per": 3,
+          "price": 4000,
+          "notes": "CRITICAL: 3개임 (sub_material_bundles.json에 1개로 잘못 기재)"
+        },
+        {
+          "item_id": "PVC_DUCT_40",
+          "qty_per": 2,
+          "price": 3000,
+          "notes": "CRITICAL: 상단 1개 + 하단 1개 = 2개 (sub_material_bundles.json에 1개로 잘못 기재)"
+        },
+        {
+          "item_id": "CABLE_WIRE",
+          "qty_per": 2,
+          "price": 25000,
+          "notes": "CRITICAL: 2개임 (sub_material_bundles.json에 1개로 잘못 기재)"
+        }
+      ],
+      "labor_add_per_item_won": 20000,
+      "validation": "CHK_BUNDLE_MAGNET (마그네트 존재 시 동반자재 포함 확인 필수)"
+    },
+
+    "BND_TIMER_EFFECT": {
+      "id": "BND_TIMER_EFFECT",
+      "class": "MANDATORY",
+      "trigger": "타이머 추가 시",
+      "description": "타이머 1개당 필수 동반자재 자동 추가",
+      "items": [
+        {
+          "item_id": "CABLE_WIRE",
+          "qty_per": 1,
+          "price": 25000
+        }
+      ],
+      "labor_add_per_item_won": 12000,
+      "validation": "CHK_TIMER_SS (타이머 존재 시 CABLE_WIRE 포함 확인 필수)"
+    },
+
+    "BND_PBL_ON_OFF": {
+      "id": "BND_PBL_ON_OFF",
+      "class": "OPTIONAL",
+      "trigger": "마그네트 + PBL 스위치 필요 시",
+      "description": "PBL ON/OFF 스위치 추가 (마그네트 수량 × 2)",
+      "items": [
+        {
+          "item_id": "PBL_ON_OFF",
+          "qty_per": 2,
+          "price": 4000,
+          "notes": "마그네트 1개당 PBL 2개 (ON + OFF)"
+        }
+      ],
+      "validation": "CHK_PBL_ON_OFF (PBL 존재 시 수량 = 마그네트 수량 × 2 확인)"
+    },
+
+    "BND_PVC_DUCT_EFFECT": {
+      "id": "BND_PVC_DUCT_EFFECT",
+      "class": "INFORMATIONAL",
+      "trigger": "PVC 덕트 포함 시",
+      "description": "외함 유효폭 감소 효과",
+      "effect": {
+        "width_reduction": 100,
+        "calculation": "좌우 여유 각 30mm + 덕트 폭 40mm = -100mm"
+      },
+      "validation": "CHK_PVC_DUCT_EFFECT (PVC 덕트 포함 시 유효폭 -100mm 적용 확인)"
+    }
+  },
+
+  "enclosure_impact": {
+    "height_adjustment": {
+      "magnet": {
+        "description": "마그네트 포함 시 외함 높이 증가",
+        "formula": "H = P (분전반) + 2D (덕트 상하 각 40mm) + S (여유 100mm) + M (마그네트 높이)",
+        "example": "MC-22 (45×75×85mm) 포함 시 H = P + 2×40 + 100 + 75 = P + 255mm",
+        "notes": "마그네트 높이는 모델별 상이 (MC-9~MC-100: 50~118mm)"
+      },
+      "timer": {
+        "description": "타이머 포함 시 외함 높이 증가",
+        "formula": "H = P + 타이머 높이 (75~102mm) + 여유",
+        "notes": "타이머는 일반적으로 마그네트보다 작음"
+      }
+    },
+    "depth_adjustment": {
+      "pbl": {
+        "description": "PBL 스위치 포함 시 외함 깊이 증가",
+        "default": 200,
+        "with_pbl": 250,
+        "increase": 50,
+        "notes": "PBL 포함 시 D=250mm로 고정"
+      }
+    }
+  },
+
+  "validation_checks": {
+    "CHK_BUNDLE_MAGNET": {
+      "description": "마그네트 존재 시 동반자재 포함 확인",
+      "required_items": ["FUSEHOLDER", "TERMINAL_BLOCK_600V (×3)", "PVC_DUCT_40 (×2)", "CABLE_WIRE (×2)"],
+      "labor_cost": 20000,
+      "failure_action": "견적 차단",
+      "class": "MANDATORY"
+    },
+    "CHK_PBL_ON_OFF": {
+      "description": "PBL 존재 시 수량 = 마그네트 수량 × 2 확인",
+      "formula": "PBL_qty = Magnet_qty × 2",
+      "failure_action": "견적 차단",
+      "class": "MANDATORY"
+    },
+    "CHK_TIMER_SS": {
+      "description": "타이머 존재 시 CABLE_WIRE 포함 확인",
+      "required_items": ["CABLE_WIRE (×1)"],
+      "labor_cost": 12000,
+      "failure_action": "견적 차단",
+      "class": "MANDATORY"
+    },
+    "CHK_PVC_DUCT_EFFECT": {
+      "description": "PVC 덕트 포함 시 유효폭 -100mm 적용 확인",
+      "width_reduction": 100,
+      "failure_action": "경고",
+      "class": "INFORMATIONAL"
+    }
+  },
+
+  "provenance": {
+    "consolidated_from": [
+      "부속자재.txt (CEO 작성 실무 문서, 마그네트/타이머 크기표)",
+      "ai_estimation_core.json (v1.2.0, 2025-09-10, catalog.accessories + rules.bundles)",
+      "견적서장성법V1.0.txt (v1.00, 2025-08-25, 부속자재 조건 11)",
+      "중요ai단가표의_2.0V.csv (1,048,407 lines, 부속자재 가격)"
+    ],
+    "consolidation_date": "2025-11-18",
+    "author": "Narberal Gamma (NABERAL KIS Estimator AI)",
+    "review_status": "CEO approval required",
+    "critical_corrections": [
+      "TERMINAL_BLOCK_600V: 3개임 (sub_material_bundles.json에 1개로 잘못 기재)",
+      "PVC_DUCT_40: 2개임 (상단 1개 + 하단 1개, sub_material_bundles.json에 1개로 잘못 기재)",
+      "CABLE_WIRE: 2개임 (sub_material_bundles.json에 1개로 잘못 기재)"
+    ],
+    "version_history": [
+      {
+        "version": "1.0.0",
+        "date": "2025-11-18",
+        "changes": "Initial consolidated version with corrected bundle quantities"
+      }
+    ]
+  }
+}

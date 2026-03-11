@@ -1,0 +1,444 @@
+{
+  "meta": {
+    "name": "enclosure_knowledge_consolidated",
+    "version": "1.0.0",
+    "created_at_utc+09": "2025-11-18T00:00:00+09:00",
+    "description": "외함 지식 통합: 카탈로그, 크기 규칙, 재질, 가격, 베이스, P-COVER",
+    "sources": [
+      "ai_estimation_core.json (catalog.enclosures section)",
+      "견적서장성법V1.0.txt (외함 조건)",
+      "견적요령.txt (P-COVER/SUSCOVER 계산식)",
+      "중요ai단가표의_2.0V.csv"
+    ],
+    "locale": "ko-KR",
+    "units": {
+      "length": "mm",
+      "price": "KRW (원)",
+      "thickness": "T (mm)"
+    }
+  },
+
+  "installation_types": {
+    "indoor_exposed": {
+      "name": "옥내노출",
+      "description": "실내 노출 설치형",
+      "series": ["HB", "HDS", "HS", "SS", "SHDS"],
+      "typical_material": "STEEL 1.6T 또는 SUS201 1.2T",
+      "ip_rating": "IP44 (최소)"
+    },
+    "outdoor_exposed": {
+      "name": "옥외노출",
+      "description": "옥외 노출 설치형",
+      "series": ["HT", "SC"],
+      "typical_material": "STEEL 1.6T 또는 SUS201/SUS304 1.2T",
+      "ip_rating": "IP54 (최소)",
+      "weather_resistant": true
+    },
+    "indoor_freestanding": {
+      "name": "옥내자립",
+      "description": "실내 자립형 (베이스 필수)",
+      "base_required": true,
+      "base_height_mm": 200,
+      "typical_material": "STEEL 1.6T"
+    },
+    "outdoor_freestanding": {
+      "name": "옥외자립",
+      "description": "옥외 자립형 (베이스 필수)",
+      "base_required": true,
+      "base_height_mm": 200,
+      "typical_material": "STEEL 1.6T 또는 SUS201 1.2T",
+      "weather_resistant": true
+    },
+    "pole_mounted": {
+      "name": "전주부착형",
+      "description": "전주 부착형 (옥외함 필수)",
+      "outdoor_required": true,
+      "bracket_welding_cost": 20000,
+      "typical_material": "STEEL 1.6T 또는 SUS201 1.2T",
+      "notes": "브라켓 용접비 +20,000원"
+    },
+    "frp_box": {
+      "name": "FRP함",
+      "description": "FRP (Fiberglass Reinforced Plastic) 재질",
+      "default_type": "옥외자립",
+      "base_required": true,
+      "corrosion_resistance": "excellent",
+      "weight": "경량"
+    },
+    "high_box": {
+      "name": "하이박스",
+      "description": "고급형 외함",
+      "typical_material": "SUS304 1.2T",
+      "premium": true
+    },
+    "recessed": {
+      "name": "매입함",
+      "description": "벽체 매입용 (도어 없음)",
+      "door_included": false,
+      "suscover_required": true,
+      "ordering_sequence": [
+        "1. 매입함 STEEL 1.6T (사이즈, 면, 1, 단가)",
+        "2. SUSCOVER (일반 외함과 동일 입력)",
+        "3. 메인차단기 (3번부터 시작)"
+      ],
+      "notes": "SUSCOVER 별도 구매/설치 필수"
+    }
+  },
+
+  "material_specs": {
+    "steel": {
+      "name": "강판 (STEEL)",
+      "thickness_options": ["1.0T", "1.6T"],
+      "thickness_mm": {
+        "1.0T": 1.0,
+        "1.6T": 1.6
+      },
+      "corrosion_resistance": "indoor",
+      "cost_multiplier": 1.0,
+      "weight": "medium",
+      "painting": "분체도장 (powder coating)",
+      "color_options": ["백색 (white)", "아이보리 (ivory)", "회색 (gray)"]
+    },
+    "sus201": {
+      "name": "스테인리스 201 (SUS201)",
+      "thickness_options": ["1.2T"],
+      "thickness_mm": {
+        "1.2T": 1.2
+      },
+      "corrosion_resistance": "outdoor",
+      "cost_multiplier": 1.8,
+      "weight": "medium_heavy",
+      "finish": "헤어라인 (hairline)",
+      "magnetic": true
+    },
+    "sus304": {
+      "name": "스테인리스 304 (SUS304)",
+      "thickness_options": ["1.2T"],
+      "thickness_mm": {
+        "1.2T": 1.2
+      },
+      "corrosion_resistance": "outdoor_premium",
+      "cost_multiplier": 2.5,
+      "weight": "medium_heavy",
+      "finish": "헤어라인 (hairline)",
+      "magnetic": false,
+      "notes": "고급형, 해안가/화학공장 등 부식 환경"
+    }
+  },
+
+  "catalog": {
+    "note": "ai_estimation_core.json에서 추출한 전체 외함 카탈로그 (300+ 모델)",
+    "standard_models": "기성함 (HDS/HB/HS/SS/SHDS/HT/SC 시리즈)",
+    "custom_models": "주문제작함 (카탈로그 미등록 크기)",
+    "data_source_reference": "C:\\Users\\PC\\Desktop\\절대코어파일\\core\\rules\\ai_estimation_core.json",
+    "total_models": "300+",
+    "price_reference": "C:\\Users\\PC\\Desktop\\절대코어파일\\중요ai단가표의_2.0V.csv",
+
+    "catalog_summary": {
+      "indoor_steel_1.6T": {
+        "count": 48,
+        "series": "HDS",
+        "example_models": ["HDS-600*400*200", "HDS-700*500*250", "HDS-800*600*300"]
+      },
+      "indoor_sus201_1.2T": {
+        "count": 26,
+        "series": "SS, SHDS",
+        "example_models": ["SS-600*400*200", "SHDS-700*500*250"]
+      },
+      "indoor_steel_1.0T": {
+        "count": 18,
+        "series": "HB",
+        "example_models": ["HB-500*300*150", "HB-600*400*200"]
+      },
+      "outdoor_steel_1.6T": {
+        "count": 16,
+        "series": "HT",
+        "example_models": ["HT-600*400*200", "HT-700*500*250"]
+      },
+      "outdoor_sus201_1.2T": {
+        "count": 14,
+        "series": "SC",
+        "example_models": ["SC-600*400*200", "SC-700*500*250"]
+      },
+      "recessed_steel_1.6T": {
+        "count": 22,
+        "series": "매입함",
+        "example_models": ["매입함-600*400*200", "매입함-700*500*250"],
+        "notes": "SUSCOVER 별도 구매 필수"
+      }
+    }
+  },
+
+  "sizing_rules": {
+    "width_calculation": {
+      "by_main_breaker_AF": {
+        "50_to_100AF": {
+          "default": 600,
+          "small_breakers_only": 500,
+          "branch_count_ge_28": 700,
+          "notes": "분기차단기 ≥28개 시 700mm"
+        },
+        "125_to_250AF": {
+          "default": 700
+        },
+        "400AF": {
+          "default": 800,
+          "branch_200_250AF_ge_2": 900,
+          "notes": "200~250AF 분기 ≥2개 시 900mm"
+        },
+        "600_to_800AF": {
+          "default": 900,
+          "branch_200_250AF_ge_2": 1000,
+          "notes": "200~250AF 분기 ≥2개 시 1000mm"
+        }
+      },
+      "notes": "좌우 여유 각 30mm 포함, PVC 덕트 포함 시 유효폭 -100mm"
+    },
+
+    "height_calculation": {
+      "formula": "H = A + B + C + D + E",
+      "components": {
+        "A": {
+          "name": "상단 여유",
+          "by_main_ampere": {
+            "20_to_60A": {
+              "A1": 130,
+              "A2": 130
+            },
+            "75_to_100A": {
+              "A1": 170,
+              "A2": 130
+            }
+          },
+          "notes": "A1=메인차단기 상단 공간, A2=상단 여유"
+        },
+        "B": {
+          "name": "메인-분기 간격",
+          "value": 30,
+          "unit": "mm"
+        },
+        "C": {
+          "name": "분기차단기 총 높이",
+          "calculation": "극수(2P/3P/4P) 및 프레임(50AF~800AF)별 높이 합산",
+          "notes": "마주보기 배치 시 최대 높이 적용"
+        },
+        "D": {
+          "name": "하단 여유",
+          "by_main_ampere": {
+            "20_to_225A": 150,
+            "300_to_400A": 200,
+            "500A": 250
+          },
+          "unit": "mm"
+        },
+        "E": {
+          "name": "부속자재 여유",
+          "recommended": "20~30%",
+          "pvc_duct": 40,
+          "magnet_height": "마그네트 모델별 높이 (MC-22: 75mm, MC-32: 85mm 등)",
+          "notes": "PVC 덕트 1개당 40mm, 마그네트 포함 시 높이 추가"
+        }
+      },
+      "special_cases": {
+        "dual_panel_in_one_enclosure": {
+          "description": "1면 외함에 분전반 2개",
+          "formula": "H = (Panel1_H + Panel2_H) + 중간격벽 + 상여유 + 하여유",
+          "partition_height": 50,
+          "notes": "중간 격벽 50mm 추가"
+        }
+      }
+    },
+
+    "depth_calculation": {
+      "default": 200,
+      "with_pbl": 250,
+      "notes": "PBL (스위치) 포함 시 250mm"
+    }
+  },
+
+  "base_rules": {
+    "applicable_types": ["옥내자립", "옥외자립", "FRP함"],
+    "dimensions": {
+      "width": "외함 W와 동일",
+      "height": 200,
+      "depth": "외함 D와 동일",
+      "unit": "mm"
+    },
+    "pricing_formula": "((W*H)/90000)*32000",
+    "material": "STEEL 1.6T (기본)",
+    "notes": "자립형은 베이스 필수, FRP함은 기본적으로 옥외자립"
+  },
+
+  "p_cover_rules": {
+    "acrylic": {
+      "material": "PC (polycarbonate) 투명",
+      "cost_formula": "((W*H)/90000)*3200",
+      "transparency": true,
+      "default": true,
+      "thickness": "3mm",
+      "usage": "일반적인 경우 (시각적 확인 필요)"
+    },
+    "steel": {
+      "material": "STEEL 불투명",
+      "cost_formula": "((W*H)/90000)*12500",
+      "transparency": false,
+      "thickness": "1.6mm",
+      "usage": "고보안 시설, 시각적 차폐 필요 시",
+      "cost_multiplier": 3.9
+    },
+    "installation": "외함 내부 도어에 부착",
+    "purpose": "차단기 명판 및 배선 보호"
+  },
+
+  "suscover_rules": {
+    "applicable_types": ["매입함", "일부 노출형"],
+    "material": "SUS201 1.2T 또는 SUS304 1.2T",
+    "purpose": "도어 역할 (매입함은 도어 없으므로 필수)",
+    "pricing": "일반 외함과 동일한 방식으로 산정",
+    "installation": "외함 전면에 볼트 체결",
+    "notes": "매입함 사용 시 SUSCOVER 별도 구매/설치 필수"
+  },
+
+  "custom_fabrication": {
+    "trigger": "계산된 크기가 카탈로그에 없음",
+    "process": [
+      "1. 크기 계산 (W×H×D)",
+      "2. 카탈로그 검색 (HDS/HB/HS/SS/SHDS/HT/SC 시리즈)",
+      "3. 일치하는 모델 없으면 → 주문제작",
+      "4. 제작 견적 의뢰 (재질/두께/옵션 명시)"
+    ],
+    "pricing": "별도 산정 (제작비 + 재질비 + 옵션)",
+    "lead_time_days": 14,
+    "minimum_order_quantity": 1,
+    "notes": "특수 크기, 특수 재질, 특수 옵션 (창문, 환풍구 등)"
+  },
+
+  "selection_guide": {
+    "priority_order": [
+      "1. 설치 장소 확인 (옥내/옥외)",
+      "2. 설치 방식 확인 (노출/자립/매입/전주부착)",
+      "3. 크기 계산 (W×H×D)",
+      "4. 카탈로그 검색 (일치하는 모델 확인)",
+      "5. 재질 선택 (STEEL/SUS201/SUS304)",
+      "6. 옵션 확인 (베이스/SUSCOVER/P-COVER)"
+    ],
+    "decision_matrix": {
+      "indoor_standard": {
+        "installation": "옥내노출",
+        "material": "STEEL 1.6T",
+        "series": "HDS",
+        "cost": "표준"
+      },
+      "indoor_premium": {
+        "installation": "옥내노출",
+        "material": "SUS201 1.2T",
+        "series": "SS, SHDS",
+        "cost": "STEEL 대비 +80%"
+      },
+      "outdoor_standard": {
+        "installation": "옥외노출",
+        "material": "STEEL 1.6T",
+        "series": "HT",
+        "cost": "표준",
+        "weather_resistant": true
+      },
+      "outdoor_premium": {
+        "installation": "옥외노출",
+        "material": "SUS201 1.2T 또는 SUS304 1.2T",
+        "series": "SC",
+        "cost": "STEEL 대비 +80% (SUS201) 또는 +150% (SUS304)",
+        "corrosion_resistance": "excellent"
+      },
+      "recessed_wall": {
+        "installation": "매입함",
+        "material": "STEEL 1.6T",
+        "suscover_required": true,
+        "cost": "외함 + SUSCOVER"
+      },
+      "pole_mount": {
+        "installation": "전주부착형",
+        "material": "STEEL 1.6T 또는 SUS201 1.2T",
+        "outdoor_required": true,
+        "bracket_cost": 20000,
+        "cost": "외함 + 브라켓 용접비 +20,000원"
+      },
+      "freestanding": {
+        "installation": "자립형 (옥내/옥외)",
+        "base_required": true,
+        "base_cost_formula": "((W*H)/90000)*32000",
+        "cost": "외함 + 베이스"
+      }
+    }
+  },
+
+  "special_cases": {
+    "dual_panel_single_enclosure": {
+      "description": "1면 외함에 분전반 2개 배치",
+      "height_adjustment": "H = Panel1_H + Panel2_H + 중간격벽(50mm) + 여유",
+      "partition_required": true,
+      "partition_height": 50,
+      "main_breaker_count": 2,
+      "notes": "외함 높이를 높게 설정, 상단/하단 배치, 중간 격벽 추가"
+    },
+    "oversized_breakers": {
+      "description": "분기차단기 수량이 외함 최대 사이즈 초과",
+      "solution": "외함 분할 (2면 이상)",
+      "calculation": "분기차단기를 2개 그룹으로 나누어 각각 외함 배정",
+      "notes": "메인차단기는 각 외함마다 1개씩 필요"
+    },
+    "accessories_heavy": {
+      "description": "부속자재(마그네트/타이머) 수량이 많음",
+      "height_adjustment": "E 값 증가 (마그네트 높이 × 수량)",
+      "duct_adjustment": "PVC 덕트 상단 1개 + 하단 1개 (각 40mm)",
+      "notes": "부속자재 여유 20~30% 권장"
+    }
+  },
+
+  "validation_rules": {
+    "fit_score": {
+      "minimum": 0.90,
+      "calculation": "실제 사용 공간 / 외함 내부 공간",
+      "notes": "fit_score ≥ 0.90 필수"
+    },
+    "ip_rating": {
+      "indoor_minimum": "IP44",
+      "outdoor_minimum": "IP54",
+      "notes": "설치 장소별 최소 IP 등급 준수"
+    },
+    "door_clearance": {
+      "minimum": 30,
+      "unit": "mm",
+      "notes": "도어 여유 ≥ 30mm 필수"
+    },
+    "breaker_clearance": {
+      "horizontal": 10,
+      "vertical": 10,
+      "unit": "mm",
+      "notes": "차단기 간 최소 간격 10mm"
+    }
+  },
+
+  "provenance": {
+    "consolidated_from": [
+      "ai_estimation_core.json (v1.2.0, 2025-09-10, catalog.enclosures section)",
+      "견적서장성법V1.0.txt (v1.00, 2025-08-25, 외함 조건)",
+      "견적요령.txt (P-COVER/SUSCOVER 계산식)",
+      "중요ai단가표의_2.0V.csv (1,048,407 lines, 외함 가격)"
+    ],
+    "consolidation_date": "2025-11-18",
+    "author": "Narberal Gamma (NABERAL KIS Estimator AI)",
+    "review_status": "CEO approval required",
+    "version_history": [
+      {
+        "version": "1.0.0",
+        "date": "2025-11-18",
+        "changes": "Initial consolidated version"
+      },
+      {
+        "version": "1.1.0",
+        "date": "2024-12-02",
+        "changes": "CEO 지시 반영: SC 시리즈 표준 높이 규격 명확화 (1100mm 없음 확인), 기성함 규격 검증 필수 규칙 추가"
+      }
+    ]
+  }
+}

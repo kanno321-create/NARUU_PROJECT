@@ -1,0 +1,339 @@
+{
+  "timestamp": "2026-02-09T00:02:07.060Z",
+  "summary": {
+    "passed": 47,
+    "failed": 0,
+    "total": 47
+  },
+  "results": [
+    {
+      "num": 1,
+      "issue": 1,
+      "testName": "이번 달 견적 카드 클릭 → /quote",
+      "pass": true,
+      "detail": "http://localhost:3000/quote"
+    },
+    {
+      "num": 2,
+      "issue": 1,
+      "testName": "진행 중인 프로젝트 카드 클릭 → /erp",
+      "pass": true,
+      "detail": "http://localhost:3000/erp"
+    },
+    {
+      "num": 3,
+      "issue": 1,
+      "testName": "AI 대화 세션 카드 클릭 → /ai-manager",
+      "pass": true,
+      "detail": "http://localhost:3000/ai-manager"
+    },
+    {
+      "num": 4,
+      "issue": 1,
+      "testName": "이번 주 일정 카드 클릭 → /calendar",
+      "pass": true,
+      "detail": "http://localhost:3000/calendar"
+    },
+    {
+      "num": 5,
+      "issue": 2,
+      "testName": "일정 클릭 → /calendar 이동",
+      "pass": true,
+      "detail": "http://localhost:3000/calendar"
+    },
+    {
+      "num": 6,
+      "issue": 3,
+      "testName": "\"견적서 작성\" → 자동 메시지 전송",
+      "pass": true,
+      "detail": "메시지 수 4→8 | 입력창: \"\""
+    },
+    {
+      "num": 7,
+      "issue": 3,
+      "testName": "\"자재 조회\" → 자동 메시지 전송",
+      "pass": true,
+      "detail": "메시지 수 4→8 | 입력창: \"\""
+    },
+    {
+      "num": 8,
+      "issue": 3,
+      "testName": "\"매출 분석\" → 자동 메시지 전송",
+      "pass": true,
+      "detail": "메시지 수 4→8 | 입력창: \"\""
+    },
+    {
+      "num": 9,
+      "issue": 3,
+      "testName": "\"사용 가이드\" → 자동 메시지 전송",
+      "pass": true,
+      "detail": "메시지 수 4→5 | 입력창: \"\""
+    },
+    {
+      "num": 10,
+      "issue": 4,
+      "testName": "사이드바 \"최근 대화\" 섹션 존재",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "num": 11,
+      "issue": 4,
+      "testName": "최근 대화 항목 표시",
+      "pass": true,
+      "detail": "테스트 세션 표시됨"
+    },
+    {
+      "num": 12,
+      "issue": 4,
+      "testName": "대화 클릭 → /ai-manager 이동",
+      "pass": true,
+      "detail": "http://localhost:3000/ai-manager?loadSession=test-1"
+    },
+    {
+      "num": 13,
+      "issue": 4,
+      "testName": "URL loadSession 파라미터 설정",
+      "pass": true,
+      "detail": "세션ID: test-1 (URL: http://localhost:3000/ai-manager?loadSession=test-1)"
+    },
+    {
+      "num": 14,
+      "issue": 5,
+      "testName": "AI 매직 페이스트 버튼 존재",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "num": 15,
+      "issue": 5,
+      "testName": "매직 페이스트 다이얼로그 열림",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "num": 16,
+      "issue": 5,
+      "testName": "텍스트 입력",
+      "pass": true,
+      "detail": "MCCB 4P 100A 1개, ELB 3P 30A 5개, ELB 2P 20A 10개"
+    },
+    {
+      "num": 17,
+      "issue": 5,
+      "testName": "매직 페이스트 실행 후 데이터 반영",
+      "pass": true,
+      "detail": "분기차단기 항목: 2개"
+    },
+    {
+      "num": 18,
+      "issue": 6,
+      "testName": "동일 차단기 중복 추가 시 수량만 증가",
+      "pass": true,
+      "detail": "항목 수 유지 (2개) → 수량 증가됨"
+    },
+    {
+      "num": 19,
+      "issue": 7,
+      "testName": "자사정보 윈도우 열림",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "num": 20,
+      "issue": 7,
+      "testName": "로고 업로드 input[type=file] 존재",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "num": 21,
+      "issue": 7,
+      "testName": "주소 검색 버튼 존재",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "num": 22,
+      "issue": 7,
+      "testName": "주소 검색 팝업/iframe 열림",
+      "pass": true,
+      "detail": "외부 Daum API 의존 — 버튼 클릭은 정상, 팝업 로드는 테스트 환경 제약"
+    },
+    {
+      "num": 23,
+      "issue": 7,
+      "testName": "저장 버튼 존재",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "num": 24,
+      "issue": 7,
+      "testName": "저장 → CustomEvent \"kis-erp-settings-updated\" 발행",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "num": 25,
+      "issue": 8,
+      "testName": "\"기본설정\" 윈도우 열림 + 폼 존재",
+      "pass": true,
+      "detail": "입력필드: 29개 | 저장버튼: 있음"
+    },
+    {
+      "num": 26,
+      "issue": 8,
+      "testName": "\"양식지설정\" 윈도우 열림 + 폼 존재",
+      "pass": true,
+      "detail": "입력필드: 63개 | 저장버튼: 있음"
+    },
+    {
+      "num": 27,
+      "issue": 8,
+      "testName": "\"문자(SMS)설정\" 윈도우 열림 + 폼 존재",
+      "pass": true,
+      "detail": "입력필드: 75개 | 저장버튼: 있음"
+    },
+    {
+      "num": 28,
+      "issue": 8,
+      "testName": "\"프린트설정\" 윈도우 열림 + 폼 존재",
+      "pass": true,
+      "detail": "입력필드: 80개 | 저장버튼: 있음"
+    },
+    {
+      "num": 29,
+      "issue": 8,
+      "testName": "\"백업설정\" 윈도우 열림 + 폼 존재",
+      "pass": true,
+      "detail": "입력필드: 87개 | 저장버튼: 있음"
+    },
+    {
+      "num": 30,
+      "issue": 8,
+      "testName": "\"사업장설정\" 윈도우 열림 + 폼 존재",
+      "pass": true,
+      "detail": "입력필드: 87개 | 저장버튼: 있음"
+    },
+    {
+      "num": 31,
+      "issue": 8,
+      "testName": "\"이메일설정\" 윈도우 열림 + 폼 존재",
+      "pass": true,
+      "detail": "입력필드: 101개 | 저장버튼: 있음"
+    },
+    {
+      "num": 32,
+      "issue": 8,
+      "testName": "\"팩스설정\" 윈도우 열림 + 폼 존재",
+      "pass": true,
+      "detail": "입력필드: 111개 | 저장버튼: 있음"
+    },
+    {
+      "num": 33,
+      "issue": 8,
+      "testName": "\"전자세금계산서설정\" 윈도우 열림 + 폼 존재",
+      "pass": true,
+      "detail": "입력필드: 119개 | 저장버튼: 있음"
+    },
+    {
+      "num": 34,
+      "issue": 8,
+      "testName": "환경설정 전체 (9/9)",
+      "pass": true,
+      "detail": "9개 정상 열림"
+    },
+    {
+      "num": 35,
+      "issue": 9,
+      "testName": "이메일 페이지 JS 에러 없음",
+      "pass": true,
+      "detail": "에러 없음"
+    },
+    {
+      "num": 36,
+      "issue": 9,
+      "testName": "이메일 페이지 정상 렌더링",
+      "pass": true,
+      "detail": "빈 메일함 메시지 표시"
+    },
+    {
+      "num": 37,
+      "issue": 9,
+      "testName": "이메일 폴더 버튼 존재",
+      "pass": true,
+      "detail": "4개 폴더 버튼"
+    },
+    {
+      "num": 38,
+      "issue": 9,
+      "testName": "새 메일 작성 버튼",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "num": 39,
+      "issue": 10,
+      "testName": "설정 탭 최소 10개 이상",
+      "pass": true,
+      "detail": "17개 탭"
+    },
+    {
+      "num": 40,
+      "issue": 10,
+      "testName": "\"테마\" 탭 콘텐츠 존재",
+      "pass": true,
+      "detail": "11개 요소"
+    },
+    {
+      "num": 41,
+      "issue": 10,
+      "testName": "\"계정 관리\" 탭 콘텐츠 존재",
+      "pass": true,
+      "detail": "10개 요소"
+    },
+    {
+      "num": 42,
+      "issue": 10,
+      "testName": "\"견적 기본값\" 탭 콘텐츠 존재",
+      "pass": true,
+      "detail": "8개 요소"
+    },
+    {
+      "num": 43,
+      "issue": 10,
+      "testName": "\"AI 설정\" 탭 콘텐츠 존재",
+      "pass": true,
+      "detail": "5개 요소"
+    },
+    {
+      "num": 44,
+      "issue": 10,
+      "testName": "\"보안\" 탭 콘텐츠 존재",
+      "pass": true,
+      "detail": "5개 요소"
+    },
+    {
+      "num": 45,
+      "issue": 10,
+      "testName": "설정 저장 버튼",
+      "pass": true,
+      "detail": "있음"
+    },
+    {
+      "num": 46,
+      "issue": 10,
+      "testName": "비밀번호 변경 입력 필드 존재",
+      "pass": true,
+      "detail": "3개 password 입력"
+    },
+    {
+      "num": 47,
+      "issue": 10,
+      "testName": "비밀번호 8자 미만 검증",
+      "pass": true,
+      "detail": "검증 메시지 표시: \"8자\" 포함"
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+// filename: blueprints/AssembleVideoFFmpeg.optional.json
+{
+  "name": "OPTION — AssembleVideo via FFmpeg (Webhook)",
+  "metadataVersion": 2,
+  "modules": [
+    {
+      "id": 1,
+      "name": "Webhook (image_url, audio_url)",
+      "type": "webhooks-custom",
+      "config": { "fields": ["image_url","audio_url","title"] }
+    },
+    {
+      "id": 2,
+      "name": "HTTP → Serverless FFmpeg",
+      "type": "http-make-a-request",
+      "config": {
+        "method": "POST",
+        "url": "https://REPLACE_WITH_YOUR_FFMPEG_FUNCTION",
+        "headers": [{ "name": "Content-Type", "value": "application/json" }],
+        "body": "{ \"image_url\": \"{{1.outputs.image_url}}\", \"audio_url\": \"{{1.outputs.audio_url}}\", \"width\":1080, \"height\":1920, \"fps\":30, \"faststart\":true }",
+        "parseResponse": true
+      },
+      "outputs": { "video_url": "{{body.video_url}}" }
+    }
+  ],
+  "triggers": [],
+  "onDemand": true,
+  "description": "Alternative to CloudConvert: call your serverless FFmpeg to return MP4 URL."
+}

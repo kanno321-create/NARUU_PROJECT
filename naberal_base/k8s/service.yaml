@@ -1,0 +1,43 @@
+# KIS Estimator - Kubernetes Service
+# ClusterIP service for internal routing with session affinity
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: kis-estimator
+  namespace: kis-estimator
+  labels:
+    app: kis-estimator
+  annotations:
+    # For service mesh integration (Istio/Linkerd)
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+spec:
+  type: ClusterIP
+  selector:
+    app: kis-estimator
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: http
+  sessionAffinity: None
+
+---
+# Headless service for StatefulSet scenarios (if needed)
+apiVersion: v1
+kind: Service
+metadata:
+  name: kis-estimator-headless
+  namespace: kis-estimator
+  labels:
+    app: kis-estimator
+spec:
+  type: ClusterIP
+  clusterIP: None
+  selector:
+    app: kis-estimator
+  ports:
+    - name: http
+      protocol: TCP
+      port: 8000
+      targetPort: http

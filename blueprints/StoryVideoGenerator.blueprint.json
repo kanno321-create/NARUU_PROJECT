@@ -1,0 +1,157 @@
+// filename: blueprints/StoryVideoGenerator.blueprint.json
+{
+  "name": "Naruu — StoryVideoGenerator (Idea→Script→TTS→Image→Video→YouTube)",
+  "metadataVersion": 2,
+  "modules": [
+    {
+      "id": 1,
+      "name": "Get Top Idea",
+      "type": "google-sheets-search-rows",
+      "connection": "conn-gsheets-naruu",
+      "config": {
+        "spreadsheetId": "REPLACE_WITH_SHEET_ID",
+        "range": "story_ideas!A2:I",
+        "filters": [
+          { "column": "Status", "op": "eq", "value": "new" }
+        ],
+        "orderBy": [{ "column": "PopularityScore", "dir": "desc" }],
+        "limit": 1
+      },
+      "outputs": { "story": { "Story_ID": "{{row.Story_ID}}", "Title": "{{row.Title}}", "Summary": "{{row.Summary}}", "SourceLink": "{{row.SourceLink}}", "PopularityScore": "{{row.PopularityScore}}" } }
+    },
+    {
+      "id": 2,
+      "name": "Write Script (OpenAI Chat)",
+      "type": "openai-chat-completions",
+      "connection": "conn-openai-naruu",
+      "config": {
+        "model": "gpt-5",
+        "system": "주부 공감·재치 톤. 30–60초 분량. 오프닝 훅→작은 갈등/반전→공감→CTA(대구에서 Naruu와 함께). 해시태그 5~8개 제안.",
+        "messages": [
+          { "role": "user", "content": "요약 스토리: {{1.outputs.story.Summary}}" }
+        ],
+        "temperature": 0.8,
+        "max_tokens": 800
+      },
+      "outputs": {
+        "script_text": "{{choices[0].message.content}}"
+      }
+    },
+    {
+      "id": 3,
+      "name": "Google TTS — Synthesize",
+      "type": "google-cloud-tts-synthesize",
+      "connection": "conn-gcloud-tts-naruu",
+      "config": {
+        "inputText": "{{2.outputs.script_text}}",
+        "languageCode": "ko-KR",
+        "voiceName": "ko-KR-Wavenet-A",
+        "audioEncoding": "MP3",
+        "speakingRate": 1.0
+      },
+      "outputs": { "audio_base64": "{{audioContent}}" }
+    },
+    {
+      "id": 4,
+      "name": "Save MP3 to Drive",
+      "type": "google-drive-upload-file",
+      "connection": "conn-gdrive-naruu",
+      "config": {
+        "folderId": "REPLACE_WITH_DRIVE_FOLDER",
+        "fileName": "{{1.outputs.story.Story_ID}}.mp3",
+        "fileContentBase64": "{{3.outputs.audio_base64}}",
+        "mimeType": "audio/mpeg"
+      },
+      "outputs": { "audio_url": "{{webViewLink}}", "audio_id": "{{id}}" }
+    },
+    {
+      "id": 5,
+      "name": "Generate Cover Image (OpenAI Images)",
+      "type": "openai-images-generate",
+      "connection": "conn-openai-naruu",
+      "config": {
+        "prompt": "세로형 일러스트, 이야기 핵심 장면. 따뜻하고 재치있는 카툰 스타일. 텍스트 없음.\n요약: {{1.outputs.story.Summary}}",
+        "size": "1024x1792",
+        "n": 1
+      },
+      "outputs": { "image_url": "{{data[0].url}}" }
+    },
+    {
+      "id": 6,
+      "name": "Assemble Video (CloudConvert: image+audio→MP4 1080x1920)",
+      "type": "cloudconvert-jobs-create",
+      "connection": "conn-cloudconvert-naruu",
+      "config": {
+        "tasks": {
+          "import-image": { "operation": "import/url", "url": "{{5.outputs.image_url}}" },
+          "import-audio": { "operation": "import/url", "url": "{{4.outputs.audio_url}}" },
+          "convert": {
+            "operation": "convert",
+            "input": ["import-image","import-audio"],
+            "output_format": "mp4",
+            "video": {
+              "codec": "x264",
+              "preset": "medium",
+              "profile": "high",
+              "crf": 23,
+              "pix_fmt": "yuv420p",
+              "width": 1080,
+              "height": 1920,
+              "fps": 30
+            },
+            "audio": { "codec": "aac", "bitrate": 128000, "samplerate": 48000, "channels": 2 },
+            "faststart": true,
+            "mode": "push"
+          },
+          "export-url": { "operation": "export/url", "input": "convert" }
+        }
+      },
+      "outputs": { "video_url": "{{tasks.export-url.result.files[0].url}}", "video_filename": "{{tasks.export-url.result.files[0].filename}}" }
+    },
+    {
+      "id": 7,
+      "name": "Upload to YouTube (Private)",
+      "type": "youtube-upload-video",
+      "connection": "conn-youtube-naruu",
+      "config": {
+        "videoUrl": "{{6.outputs.video_url}}",
+        "title": "{{1.outputs.story.Title}}｜Naruu",
+        "description": "원출처: {{1.outputs.story.SourceLink}}\n\n해시태그: #주부일상 #한일부부 #대구 #Naruu",
+        "privacyStatus": "private",
+        "tags": ["주부","국제결혼","대구","Naruu","릴","쇼츠"]
+      },
+      "outputs": { "youtube_id": "{{id}}", "youtube_watch_url": "https://youtu.be/{{id}}" }
+    },
+    {
+      "id": 8,
+      "name": "Mark Idea as used",
+      "type": "google-sheets-update-row",
+      "connection": "conn-gsheets-naruu",
+      "config": {
+        "spreadsheetId": "REPLACE_WITH_SHEET_ID",
+        "range": "story_ideas!A2:I",
+        "lookupColumn": "Story_ID",
+        "lookupValue": "{{1.outputs.story.Story_ID}}",
+        "updates": { "Status": "used", "Notes": "YT: {{7.outputs.youtube_watch_url}}" }
+      }
+    },
+    {
+      "id": 9,
+      "name": "Report (Log/Return)",
+      "type": "json-aggregate",
+      "config": {
+        "payload": {
+          "story_id": "{{1.outputs.story.Story_ID}}",
+          "title": "{{1.outputs.story.Title}}",
+          "audio_url": "{{4.outputs.audio_url}}",
+          "image_url": "{{5.outputs.image_url}}",
+          "video_url_temp": "{{6.outputs.video_url}}",
+          "youtube_watch_url": "{{7.outputs.youtube_watch_url}}"
+        }
+      }
+    }
+  ],
+  "triggers": [],
+  "onDemand": true,
+  "description": "Picks a top 'new' idea → writes script → TTS → image → assembles MP4(1080x1920) → uploads to YouTube(private) → marks used → returns links."
+}

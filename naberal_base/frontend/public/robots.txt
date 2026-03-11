@@ -1,0 +1,11 @@
+# hkkor.com robots.txt
+User-agent: *
+Allow: /
+Disallow: /dashboard
+Disallow: /erp
+Disallow: /settings
+Disallow: /ai-manager
+Disallow: /quote
+Disallow: /api/
+
+Sitemap: https://hkkor.com/sitemap.xml

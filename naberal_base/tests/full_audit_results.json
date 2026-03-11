@@ -1,0 +1,881 @@
+{
+  "timestamp": "2026-02-09T00:00:01.913Z",
+  "summary": {
+    "total": 131,
+    "pass": 96,
+    "fail": 0,
+    "warn": 35,
+    "skip": 0
+  },
+  "pages": {
+    "API": [
+      {
+        "element": "Health",
+        "status": "PASS",
+        "detail": "HTTP 200",
+        "time": "2026-02-09T00:00:07.601Z"
+      },
+      {
+        "element": "Liveness",
+        "status": "PASS",
+        "detail": "HTTP 200",
+        "time": "2026-02-09T00:00:07.913Z"
+      },
+      {
+        "element": "Breaker Catalog",
+        "status": "PASS",
+        "detail": "HTTP 200",
+        "time": "2026-02-09T00:00:08.008Z"
+      },
+      {
+        "element": "Enclosure Catalog",
+        "status": "PASS",
+        "detail": "HTTP 200",
+        "time": "2026-02-09T00:00:08.112Z"
+      },
+      {
+        "element": "ERP Customers",
+        "status": "PASS",
+        "detail": "HTTP 200",
+        "time": "2026-02-09T00:00:10.129Z"
+      },
+      {
+        "element": "ERP Products",
+        "status": "PASS",
+        "detail": "HTTP 200",
+        "time": "2026-02-09T00:00:12.142Z"
+      },
+      {
+        "element": "Calendar Events",
+        "status": "PASS",
+        "detail": "HTTP 200",
+        "time": "2026-02-09T00:00:13.677Z"
+      },
+      {
+        "element": "Email OAuth Status",
+        "status": "PASS",
+        "detail": "HTTP 200",
+        "time": "2026-02-09T00:00:13.775Z"
+      },
+      {
+        "element": "AI Models",
+        "status": "PASS",
+        "detail": "HTTP 200",
+        "time": "2026-02-09T00:00:13.872Z"
+      },
+      {
+        "element": "Email Templates",
+        "status": "PASS",
+        "detail": "HTTP 200",
+        "time": "2026-02-09T00:00:13.962Z"
+      }
+    ],
+    "/login": [
+      {
+        "element": "ID Input Field",
+        "status": "PASS",
+        "detail": "Visible",
+        "time": "2026-02-09T00:00:16.736Z"
+      },
+      {
+        "element": "Password Input Field",
+        "status": "PASS",
+        "detail": "Visible",
+        "time": "2026-02-09T00:00:16.736Z"
+      },
+      {
+        "element": "Login Submit Button",
+        "status": "PASS",
+        "detail": "Visible",
+        "time": "2026-02-09T00:00:16.736Z"
+      },
+      {
+        "element": "Login Form Submit",
+        "status": "WARN",
+        "detail": "No navigation after submit",
+        "time": "2026-02-09T00:00:19.787Z"
+      }
+    ],
+    "/dashboard": [
+      {
+        "element": "Stat Cards Count",
+        "status": "PASS",
+        "detail": "Found 8 clickable cards (expected 4)",
+        "time": "2026-02-09T00:00:21.457Z"
+      },
+      {
+        "element": "StatCard[0] \"대대표이사대표이사\"",
+        "status": "WARN",
+        "detail": "No navigation",
+        "time": "2026-02-09T00:00:22.515Z"
+      },
+      {
+        "element": "StatCard[1] \"이번 달 견적0+12%\"",
+        "status": "PASS",
+        "detail": "→ http://localhost:3000/quote",
+        "time": "2026-02-09T00:00:23.557Z"
+      },
+      {
+        "element": "StatCard[2] \"진행 중인 프로젝트32건 완료 예정\"",
+        "status": "PASS",
+        "detail": "→ http://localhost:3000/erp",
+        "time": "2026-02-09T00:00:25.612Z"
+      },
+      {
+        "element": "StatCard[3] \"AI 대화 세션0활성\"",
+        "status": "PASS",
+        "detail": "→ http://localhost:3000/ai-manager",
+        "time": "2026-02-09T00:00:27.657Z"
+      },
+      {
+        "element": "QuickAction \"AI 견적\"",
+        "status": "PASS",
+        "detail": "→ http://localhost:3000/ai-manager",
+        "time": "2026-02-09T00:00:29.732Z"
+      },
+      {
+        "element": "QuickAction \"견적 작성\"",
+        "status": "PASS",
+        "detail": "→ http://localhost:3000/quote",
+        "time": "2026-02-09T00:00:31.794Z"
+      },
+      {
+        "element": "QuickAction \"ERP\"",
+        "status": "PASS",
+        "detail": "→ http://localhost:3000/erp",
+        "time": "2026-02-09T00:00:33.864Z"
+      },
+      {
+        "element": "QuickAction \"도면 관리\"",
+        "status": "PASS",
+        "detail": "→ http://localhost:3000/drawings",
+        "time": "2026-02-09T00:00:35.933Z"
+      },
+      {
+        "element": "Calendar Events Section",
+        "status": "PASS",
+        "detail": "Found 2 clickable events",
+        "time": "2026-02-09T00:00:36.949Z"
+      },
+      {
+        "element": "Recent AI Sessions",
+        "status": "PASS",
+        "detail": "Found 1 session items",
+        "time": "2026-02-09T00:00:36.951Z"
+      },
+      {
+        "element": "Total Clickable Elements",
+        "status": "PASS",
+        "detail": "28 elements, 6 other buttons",
+        "time": "2026-02-09T00:00:36.954Z"
+      }
+    ],
+    "/quote": [
+      {
+        "element": "Tab Buttons",
+        "status": "WARN",
+        "detail": "Found 0 tabs",
+        "time": "2026-02-09T00:00:38.620Z"
+      },
+      {
+        "element": "Add Tab Button (+)",
+        "status": "PASS",
+        "detail": "Visible",
+        "time": "2026-02-09T00:00:38.623Z"
+      },
+      {
+        "element": "Customer Info Fields",
+        "status": "WARN",
+        "detail": "0 fields",
+        "time": "2026-02-09T00:00:38.624Z"
+      },
+      {
+        "element": "Enclosure/Select Fields",
+        "status": "PASS",
+        "detail": "14 fields",
+        "time": "2026-02-09T00:00:38.625Z"
+      },
+      {
+        "element": "Main Breaker Fields",
+        "status": "PASS",
+        "detail": "Found 14",
+        "time": "2026-02-09T00:00:38.625Z"
+      },
+      {
+        "element": "Add Branch Breaker",
+        "status": "PASS",
+        "detail": "Click response checked",
+        "time": "2026-02-09T00:00:39.176Z"
+      },
+      {
+        "element": "Magic Paste",
+        "status": "PASS",
+        "detail": "Found",
+        "time": "2026-02-09T00:00:39.178Z"
+      },
+      {
+        "element": "Action \"저장\"",
+        "status": "PASS",
+        "detail": "Button visible",
+        "time": "2026-02-09T00:00:39.179Z"
+      },
+      {
+        "element": "Action \"인쇄\"",
+        "status": "PASS",
+        "detail": "Button visible",
+        "time": "2026-02-09T00:00:39.180Z"
+      },
+      {
+        "element": "Action \"이메일\"",
+        "status": "PASS",
+        "detail": "Button visible",
+        "time": "2026-02-09T00:00:39.180Z"
+      },
+      {
+        "element": "Action \"Excel\"",
+        "status": "WARN",
+        "detail": "Not found",
+        "time": "2026-02-09T00:00:39.181Z"
+      },
+      {
+        "element": "Action \"PDF\"",
+        "status": "WARN",
+        "detail": "Not found",
+        "time": "2026-02-09T00:00:39.182Z"
+      },
+      {
+        "element": "Action \"생성\"",
+        "status": "PASS",
+        "detail": "Button visible",
+        "time": "2026-02-09T00:00:39.183Z"
+      },
+      {
+        "element": "Action \"출력\"",
+        "status": "WARN",
+        "detail": "Not found",
+        "time": "2026-02-09T00:00:39.184Z"
+      },
+      {
+        "element": "Total Clickable Elements",
+        "status": "PASS",
+        "detail": "43 elements found",
+        "time": "2026-02-09T00:00:39.188Z"
+      }
+    ],
+    "/ai-manager": [
+      {
+        "element": "Chat Input",
+        "status": "PASS",
+        "detail": "Visible",
+        "time": "2026-02-09T00:00:40.851Z"
+      },
+      {
+        "element": "Send Button",
+        "status": "PASS",
+        "detail": "Visible (SVG icon button)",
+        "time": "2026-02-09T00:00:40.852Z"
+      },
+      {
+        "element": "QuickAction \"견적서 작성\"",
+        "status": "WARN",
+        "detail": "Button not visible",
+        "time": "2026-02-09T00:00:40.854Z"
+      },
+      {
+        "element": "QuickAction \"자재 조회\"",
+        "status": "WARN",
+        "detail": "Button not visible",
+        "time": "2026-02-09T00:00:40.855Z"
+      },
+      {
+        "element": "QuickAction \"매출 분석\"",
+        "status": "WARN",
+        "detail": "Button not visible",
+        "time": "2026-02-09T00:00:40.856Z"
+      },
+      {
+        "element": "QuickAction \"사용 가이드\"",
+        "status": "WARN",
+        "detail": "Button not visible",
+        "time": "2026-02-09T00:00:40.857Z"
+      },
+      {
+        "element": "New Chat Button",
+        "status": "PASS",
+        "detail": "Visible",
+        "time": "2026-02-09T00:00:40.859Z"
+      },
+      {
+        "element": "Session Sidebar Items",
+        "status": "PASS",
+        "detail": "0 sessions found",
+        "time": "2026-02-09T00:00:40.860Z"
+      },
+      {
+        "element": "Export \"Markdown\"",
+        "status": "WARN",
+        "detail": "Not found",
+        "time": "2026-02-09T00:00:40.861Z"
+      },
+      {
+        "element": "Export \"텍스트\"",
+        "status": "WARN",
+        "detail": "Not found",
+        "time": "2026-02-09T00:00:40.862Z"
+      },
+      {
+        "element": "Export \"복사\"",
+        "status": "WARN",
+        "detail": "Not found",
+        "time": "2026-02-09T00:00:40.863Z"
+      },
+      {
+        "element": "Export \"내보내기\"",
+        "status": "WARN",
+        "detail": "Not found",
+        "time": "2026-02-09T00:00:40.864Z"
+      },
+      {
+        "element": "Visualization Panel Toggle",
+        "status": "WARN",
+        "detail": "Not found",
+        "time": "2026-02-09T00:00:40.864Z"
+      },
+      {
+        "element": "Total Clickable Elements",
+        "status": "PASS",
+        "detail": "19 elements found",
+        "time": "2026-02-09T00:00:40.867Z"
+      }
+    ],
+    "/calendar": [
+      {
+        "element": "View \"월간\"",
+        "status": "WARN",
+        "detail": "View switch tested",
+        "time": "2026-02-09T00:00:44.059Z"
+      },
+      {
+        "element": "View \"주간\"",
+        "status": "PASS",
+        "detail": "View switch tested",
+        "time": "2026-02-09T00:00:44.608Z"
+      },
+      {
+        "element": "View \"일간\"",
+        "status": "WARN",
+        "detail": "Not found",
+        "time": "2026-02-09T00:00:44.610Z"
+      },
+      {
+        "element": "Nav \"Prev\"",
+        "status": "WARN",
+        "detail": "Not found",
+        "time": "2026-02-09T00:00:44.611Z"
+      },
+      {
+        "element": "Nav \"Next\"",
+        "status": "WARN",
+        "detail": "Not found",
+        "time": "2026-02-09T00:00:44.612Z"
+      },
+      {
+        "element": "Nav \"Today\"",
+        "status": "PASS",
+        "detail": "Clicked",
+        "time": "2026-02-09T00:00:44.951Z"
+      },
+      {
+        "element": "Add Event Button",
+        "status": "PASS",
+        "detail": "Modal/Form opened",
+        "time": "2026-02-09T00:00:45.800Z"
+      },
+      {
+        "element": "Search Input",
+        "status": "PASS",
+        "detail": "Visible",
+        "time": "2026-02-09T00:00:46.160Z"
+      },
+      {
+        "element": "Filter/Tag Buttons",
+        "status": "PASS",
+        "detail": "0 found",
+        "time": "2026-02-09T00:00:46.161Z"
+      },
+      {
+        "element": "Total Clickable Elements",
+        "status": "PASS",
+        "detail": "54 elements",
+        "time": "2026-02-09T00:00:46.166Z"
+      }
+    ],
+    "/drawings": [
+      {
+        "element": "Upload Button",
+        "status": "PASS",
+        "detail": "Visible",
+        "time": "2026-02-09T00:00:47.837Z"
+      },
+      {
+        "element": "View Mode Toggle",
+        "status": "WARN",
+        "detail": "0 view toggles",
+        "time": "2026-02-09T00:00:47.839Z"
+      },
+      {
+        "element": "Sort Controls",
+        "status": "PASS",
+        "detail": "Visible",
+        "time": "2026-02-09T00:00:47.840Z"
+      },
+      {
+        "element": "Search Input",
+        "status": "PASS",
+        "detail": "Visible",
+        "time": "2026-02-09T00:00:47.840Z"
+      },
+      {
+        "element": "Filter Button",
+        "status": "PASS",
+        "detail": "Visible",
+        "time": "2026-02-09T00:00:47.843Z"
+      },
+      {
+        "element": "Compare Button",
+        "status": "PASS",
+        "detail": "Visible",
+        "time": "2026-02-09T00:00:47.844Z"
+      },
+      {
+        "element": "Bulk \"전체 선택\"",
+        "status": "WARN",
+        "detail": "Not found",
+        "time": "2026-02-09T00:00:47.845Z"
+      },
+      {
+        "element": "Bulk \"전송\"",
+        "status": "WARN",
+        "detail": "Not found",
+        "time": "2026-02-09T00:00:47.847Z"
+      },
+      {
+        "element": "Bulk \"다운로드\"",
+        "status": "WARN",
+        "detail": "Not found",
+        "time": "2026-02-09T00:00:47.849Z"
+      },
+      {
+        "element": "Bulk \"삭제\"",
+        "status": "WARN",
+        "detail": "Not found",
+        "time": "2026-02-09T00:00:47.851Z"
+      },
+      {
+        "element": "Drawing Cards",
+        "status": "PASS",
+        "detail": "0 cards found",
+        "time": "2026-02-09T00:00:47.852Z"
+      },
+      {
+        "element": "Total Clickable Elements",
+        "status": "PASS",
+        "detail": "54 elements",
+        "time": "2026-02-09T00:00:47.867Z"
+      }
+    ],
+    "/email": [
+      {
+        "element": "Email Folders",
+        "status": "PASS",
+        "detail": "2 folders visible",
+        "time": "2026-02-09T00:00:49.507Z"
+      },
+      {
+        "element": "Compose Button",
+        "status": "PASS",
+        "detail": "Visible",
+        "time": "2026-02-09T00:00:49.508Z"
+      },
+      {
+        "element": "Email List Items",
+        "status": "PASS",
+        "detail": "0 items (may include non-email rows)",
+        "time": "2026-02-09T00:00:49.509Z"
+      },
+      {
+        "element": "Refresh Button",
+        "status": "WARN",
+        "detail": "Not found",
+        "time": "2026-02-09T00:00:49.510Z"
+      },
+      {
+        "element": "JS Errors",
+        "status": "PASS",
+        "detail": "No JS errors",
+        "time": "2026-02-09T00:00:49.512Z"
+      },
+      {
+        "element": "Total Clickable Elements",
+        "status": "PASS",
+        "detail": "36 elements",
+        "time": "2026-02-09T00:00:49.515Z"
+      }
+    ],
+    "/settings": [
+      {
+        "element": "Tab \"테마\" (theme)",
+        "status": "WARN",
+        "detail": "No visible change",
+        "time": "2026-02-09T00:00:51.687Z"
+      },
+      {
+        "element": "Tab \"계정\" (account)",
+        "status": "PASS",
+        "detail": "Content changed on click",
+        "time": "2026-02-09T00:00:52.239Z"
+      },
+      {
+        "element": "Tab \"견적\" (quote)",
+        "status": "PASS",
+        "detail": "Content changed on click",
+        "time": "2026-02-09T00:00:52.786Z"
+      },
+      {
+        "element": "Tab \"단축키\" (shortcuts)",
+        "status": "PASS",
+        "detail": "Content changed on click",
+        "time": "2026-02-09T00:00:53.315Z"
+      },
+      {
+        "element": "Tab \"인쇄\" (print)",
+        "status": "PASS",
+        "detail": "Content changed on click",
+        "time": "2026-02-09T00:00:53.848Z"
+      },
+      {
+        "element": "Tab \"자동저장\" (autosave)",
+        "status": "WARN",
+        "detail": "Tab button not found",
+        "time": "2026-02-09T00:00:53.849Z"
+      },
+      {
+        "element": "Tab \"알림\" (notifications)",
+        "status": "PASS",
+        "detail": "Content changed on click",
+        "time": "2026-02-09T00:00:54.368Z"
+      },
+      {
+        "element": "Tab \"내보내기\" (export)",
+        "status": "PASS",
+        "detail": "Content changed on click",
+        "time": "2026-02-09T00:00:54.889Z"
+      },
+      {
+        "element": "Tab \"세션\" (session)",
+        "status": "PASS",
+        "detail": "Content changed on click",
+        "time": "2026-02-09T00:00:55.422Z"
+      },
+      {
+        "element": "Tab \"이메일\" (email)",
+        "status": "PASS",
+        "detail": "Content changed on click",
+        "time": "2026-02-09T00:00:55.953Z"
+      },
+      {
+        "element": "Tab \"AI\" (ai)",
+        "status": "PASS",
+        "detail": "Content changed on click",
+        "time": "2026-02-09T00:00:56.473Z"
+      },
+      {
+        "element": "Tab \"보안\" (security)",
+        "status": "PASS",
+        "detail": "Content changed on click",
+        "time": "2026-02-09T00:00:57.008Z"
+      },
+      {
+        "element": "Tab \"정보\" (about)",
+        "status": "PASS",
+        "detail": "Content changed on click",
+        "time": "2026-02-09T00:00:57.548Z"
+      },
+      {
+        "element": "Tab \"사용자\" (users)",
+        "status": "PASS",
+        "detail": "Content changed on click",
+        "time": "2026-02-09T00:00:58.077Z"
+      },
+      {
+        "element": "Tabs Summary",
+        "status": "PASS",
+        "detail": "13/14 tabs found",
+        "time": "2026-02-09T00:00:58.077Z"
+      },
+      {
+        "element": "Save Button",
+        "status": "PASS",
+        "detail": "Visible",
+        "time": "2026-02-09T00:00:58.081Z"
+      },
+      {
+        "element": "Password Fields",
+        "status": "WARN",
+        "detail": "0 password fields",
+        "time": "2026-02-09T00:00:58.607Z"
+      },
+      {
+        "element": "JS Errors",
+        "status": "PASS",
+        "detail": "No JS errors",
+        "time": "2026-02-09T00:00:58.607Z"
+      },
+      {
+        "element": "Total Clickable Elements",
+        "status": "PASS",
+        "detail": "33 elements",
+        "time": "2026-02-09T00:00:58.610Z"
+      }
+    ],
+    "/erp": [
+      {
+        "element": "ERP Sidebar",
+        "status": "PASS",
+        "detail": "Visible",
+        "time": "2026-02-09T00:01:00.823Z"
+      },
+      {
+        "element": "ERP Workspace",
+        "status": "PASS",
+        "detail": "Visible",
+        "time": "2026-02-09T00:01:00.824Z"
+      },
+      {
+        "element": "Toolbar Buttons",
+        "status": "PASS",
+        "detail": "0 toolbar buttons",
+        "time": "2026-02-09T00:01:00.827Z"
+      },
+      {
+        "element": "Sidebar Toggle",
+        "status": "WARN",
+        "detail": "Not found",
+        "time": "2026-02-09T00:01:00.829Z"
+      },
+      {
+        "element": "Menu Categories",
+        "status": "PASS",
+        "detail": "2 categories",
+        "time": "2026-02-09T00:01:00.830Z"
+      },
+      {
+        "element": "Window \"자사정보등록\" (company-info)",
+        "status": "WARN",
+        "detail": "Menu item not found/visible",
+        "time": "2026-02-09T00:01:04.112Z"
+      },
+      {
+        "element": "Window \"거래처등록\" (customer)",
+        "status": "WARN",
+        "detail": "Menu item not found/visible",
+        "time": "2026-02-09T00:01:05.116Z"
+      },
+      {
+        "element": "Window \"상품등록\" (product)",
+        "status": "WARN",
+        "detail": "Menu item not found/visible",
+        "time": "2026-02-09T00:01:06.131Z"
+      },
+      {
+        "element": "Window \"부서별사원등록\" (employee)",
+        "status": "WARN",
+        "detail": "Menu item not found/visible",
+        "time": "2026-02-09T00:01:07.135Z"
+      },
+      {
+        "element": "Window \"매출전표\" (sales-voucher)",
+        "status": "PASS",
+        "detail": "Menu clicked (no DOM size change)",
+        "time": "2026-02-09T00:01:07.478Z"
+      },
+      {
+        "element": "Window \"매입전표\" (purchase-voucher)",
+        "status": "PASS",
+        "detail": "Menu clicked (no DOM size change)",
+        "time": "2026-02-09T00:01:38.002Z"
+      },
+      {
+        "element": "Window \"수금전표\" (collection-voucher)",
+        "status": "PASS",
+        "detail": "Menu clicked (no DOM size change)",
+        "time": "2026-02-09T00:02:08.521Z"
+      },
+      {
+        "element": "Window \"매출명세서\" (sales-statement)",
+        "status": "PASS",
+        "detail": "Menu clicked (no DOM size change)",
+        "time": "2026-02-09T00:02:39.028Z"
+      },
+      {
+        "element": "Window \"매입명세서\" (purchase-statement)",
+        "status": "PASS",
+        "detail": "Menu clicked (no DOM size change)",
+        "time": "2026-02-09T00:03:09.542Z"
+      },
+      {
+        "element": "Window \"재고현황\" (stock-status)",
+        "status": "PASS",
+        "detail": "Menu clicked (no DOM size change)",
+        "time": "2026-02-09T00:03:40.050Z"
+      },
+      {
+        "element": "Window \"재고조정\" (inventory-adjust)",
+        "status": "PASS",
+        "detail": "Menu clicked (no DOM size change)",
+        "time": "2026-02-09T00:04:10.574Z"
+      },
+      {
+        "element": "Window \"수금명세서\" (collection-statement)",
+        "status": "PASS",
+        "detail": "Menu clicked (no DOM size change)",
+        "time": "2026-02-09T00:04:41.106Z"
+      },
+      {
+        "element": "Window \"지급명세서\" (payment-statement)",
+        "status": "PASS",
+        "detail": "Menu clicked (no DOM size change)",
+        "time": "2026-02-09T00:05:11.617Z"
+      },
+      {
+        "element": "Window \"현금명세서\" (cash-statement)",
+        "status": "PASS",
+        "detail": "Menu clicked (no DOM size change)",
+        "time": "2026-02-09T00:05:42.127Z"
+      },
+      {
+        "element": "Window \"은행계좌명세서\" (bank-statement)",
+        "status": "PASS",
+        "detail": "Menu clicked (no DOM size change)",
+        "time": "2026-02-09T00:06:12.645Z"
+      },
+      {
+        "element": "Window \"종합손익현황\" (profit-loss)",
+        "status": "PASS",
+        "detail": "Menu clicked (no DOM size change)",
+        "time": "2026-02-09T00:06:43.156Z"
+      },
+      {
+        "element": "Window \"월별현황차트\" (monthly-chart)",
+        "status": "PASS",
+        "detail": "Menu clicked (no DOM size change)",
+        "time": "2026-02-09T00:07:13.671Z"
+      },
+      {
+        "element": "Window \"기본설정\" (basic-settings)",
+        "status": "PASS",
+        "detail": "Menu clicked (no DOM size change)",
+        "time": "2026-02-09T00:07:44.182Z"
+      },
+      {
+        "element": "Window \"이메일설정\" (email-settings)",
+        "status": "PASS",
+        "detail": "Menu clicked (no DOM size change)",
+        "time": "2026-02-09T00:08:14.693Z"
+      },
+      {
+        "element": "Window \"견적서관리\" (estimate-management)",
+        "status": "PASS",
+        "detail": "Menu clicked (no DOM size change)",
+        "time": "2026-02-09T00:08:45.207Z"
+      },
+      {
+        "element": "ERP Windows Summary",
+        "status": "PASS",
+        "detail": "16 opened, 4 failed, 20 tested of 115 total",
+        "time": "2026-02-09T00:09:15.368Z"
+      },
+      {
+        "element": "ERP Settings Tabs",
+        "status": "WARN",
+        "detail": "0/9 settings tabs visible",
+        "time": "2026-02-09T00:09:16.217Z"
+      },
+      {
+        "element": "JS Errors",
+        "status": "PASS",
+        "detail": "No JS errors",
+        "time": "2026-02-09T00:09:16.217Z"
+      },
+      {
+        "element": "Total Clickable Elements",
+        "status": "PASS",
+        "detail": "80 elements on ERP desktop",
+        "time": "2026-02-09T00:09:16.225Z"
+      }
+    ]
+  },
+  "erpWindows": {
+    "company-info": {
+      "status": "NOT_FOUND"
+    },
+    "customer": {
+      "status": "NOT_FOUND"
+    },
+    "product": {
+      "status": "NOT_FOUND"
+    },
+    "employee": {
+      "status": "NOT_FOUND"
+    },
+    "sales-voucher": {
+      "status": "OPENED_NO_CHANGE"
+    },
+    "purchase-voucher": {
+      "status": "OPENED_NO_CHANGE"
+    },
+    "collection-voucher": {
+      "status": "OPENED_NO_CHANGE"
+    },
+    "sales-statement": {
+      "status": "OPENED_NO_CHANGE"
+    },
+    "purchase-statement": {
+      "status": "OPENED_NO_CHANGE"
+    },
+    "stock-status": {
+      "status": "OPENED_NO_CHANGE"
+    },
+    "inventory-adjust": {
+      "status": "OPENED_NO_CHANGE"
+    },
+    "collection-statement": {
+      "status": "OPENED_NO_CHANGE"
+    },
+    "payment-statement": {
+      "status": "OPENED_NO_CHANGE"
+    },
+    "cash-statement": {
+      "status": "OPENED_NO_CHANGE"
+    },
+    "bank-statement": {
+      "status": "OPENED_NO_CHANGE"
+    },
+    "profit-loss": {
+      "status": "OPENED_NO_CHANGE"
+    },
+    "monthly-chart": {
+      "status": "OPENED_NO_CHANGE"
+    },
+    "basic-settings": {
+      "status": "OPENED_NO_CHANGE"
+    },
+    "email-settings": {
+      "status": "OPENED_NO_CHANGE"
+    },
+    "estimate-management": {
+      "status": "OPENED_NO_CHANGE"
+    }
+  },
+  "errors": []
+}

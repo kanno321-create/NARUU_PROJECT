@@ -1,0 +1,1204 @@
+openapi: 3.1.0
+info:
+  title: NABERAL KIS Estimator API
+  version: 2.0.0
+  description: |
+    전기 패널 견적 AI 시스템 API (Contract-First + Evidence-Gated)
+
+    ## 핵심 원칙
+    - **Contract-First**: 계약이 구현보다 우선
+    - **Evidence-Gated**: 모든 계산은 증거 생성 필수
+    - **SSOT 전용**: core/ssot/** 기반 데이터 처리
+    - **Zero-Mock**: 목업/가짜 데이터 절대 금지
+    - **FIX-4 Pipeline**: 5단계 필수 (Enclosure → Breaker → Critic → Format → Cover)
+
+    ## 아키텍처
+    - **시스템**: KIS v2.0 (Estimator 전용 AI)
+    - **데이터베이스**: PostgreSQL (schemas: estimator, shared)
+    - **캐시**: Redis (idempotency, dedup, rate-limit)
+    - **인증**: JWT + JWKS
+    - **관측성**: OpenTelemetry + TraceId
+
+  contact:
+    name: NABERAL KIS Support
+    email: support@kis-estimator.com
+
+  license:
+    name: Proprietary
+    url: https://kis-estimator.com/license
+
+servers:
+  - url: https://api.kis-estimator.com/v1
+    description: Production server
+  - url: https://staging-api.kis-estimator.com/v1
+    description: Staging server
+  - url: http://localhost:8000/v1
+    description: Local development server
+
+security:
+  - BearerAuth: []
+  - ApiKeyAuth: []
+
+tags:
+  - name: estimates
+    description: 견적 생성 및 관리 (FIX-4 Pipeline)
+  - name: catalog
+    description: 자재 카탈로그 (차단기/외함/부속자재)
+  - name: validation
+    description: 검증 및 품질 게이트
+  - name: health
+    description: Health check and monitoring
+
+paths:
+  /estimates:
+    post:
+      tags:
+        - estimates
+      summary: 견적 생성 (FIX-4 전체 파이프라인)
+      description: |
+        FIX-4 파이프라인 전체를 실행하여 견적을 생성합니다.
+
+        ## FIX-4 Pipeline
+        1. **Stage 1: Enclosure** - 외함 크기 계산 (fit_score ≥ 0.90)
+        2. **Stage 2: Breaker** - 차단기 배치 (상평형 ≤ 4%, 간섭=0)
+        3. **Stage 2.1: Critic** - 배치 검증 및 개선 제안
+        4. **Stage 3: Format** - Excel 문서 생성 (수식 보존 100%)
+        5. **Stage 4: Cover** - 표지 생성 (규칙 준수 100%)
+        6. **Stage 5: Doc Lint** - 최종 검증 (린트 오류=0)
+
+        ## 필수 검증 체크 (7가지)
+        - CHK_BUNDLE_MAGNET: 마그네트 동반자재 포함 확인
+        - CHK_BUNDLE_TIMER: 타이머 동반자재 포함 확인
+        - CHK_ENCLOSURE_H_FORMULA: 외함 높이 공식 적용 확인
+        - CHK_PHASE_BALANCE: 상평형 ≤ 4% 확인
+        - CHK_CLEARANCE_VIOLATIONS: 간섭 = 0 확인
+        - CHK_THERMAL_VIOLATIONS: 열밀도 = 0 확인
+        - CHK_FORMULA_PRESERVATION: Excel 수식 보존 = 100% 확인
+
+      operationId: createEstimate
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EstimateRequest'
+            examples:
+              basic_panel:
+                summary: 기본 분전반 견적
+                value:
+                  customer_name: "ABC건설"
+                  project_name: "신축 아파트 전기공사"
+                  panels:
+                    - panel_name: "분전반1"
+                      main_breaker:
+                        model: "SBE-104"
+                        ampere: 75
+                        poles: 4
+                      branch_breakers:
+                        - model: "SBE-54"
+                          ampere: 30
+                          poles: 4
+                          quantity: 5
+                        - model: "SEE-102"
+                          ampere: 60
+                          poles: 2
+                          quantity: 3
+                      enclosure:
+                        type: "옥내노출"
+                        material: "STEEL 1.6T"
+
+              with_accessories:
+                summary: 부속자재 포함 견적
+                value:
+                  customer_name: "XYZ공장"
+                  project_name: "공장 전기 증설"
+                  panels:
+                    - panel_name: "제어반1"
+                      main_breaker:
+                        model: "SBS-203"
+                        ampere: 150
+                        poles: 3
+                      branch_breakers:
+                        - model: "SBS-102"
+                          ampere: 60
+                          poles: 2
+                          quantity: 8
+                      accessories:
+                        - type: "magnet"
+                          model: "MC-22"
+                          quantity: 2
+                        - type: "timer"
+                          model: "24H_TIMER"
+                          quantity: 1
+                      enclosure:
+                        type: "옥외노출"
+                        material: "SUS201 1.2T"
+
+      responses:
+        '200':
+          description: 견적 생성 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EstimateResponse'
+              examples:
+                success:
+                  summary: 성공 응답
+                  value:
+                    estimate_id: "EST-20251118-0001"
+                    status: "completed"
+                    created_at: "2025-11-18T10:30:00+09:00"
+                    pipeline_results:
+                      stage_1_enclosure:
+                        status: "passed"
+                        fit_score: 0.92
+                        enclosure_size: [600, 800, 200]
+                      stage_2_breaker:
+                        status: "passed"
+                        phase_balance: 2.3
+                        clearance_violations: 0
+                        thermal_violations: 0
+                      stage_3_format:
+                        status: "passed"
+                        formula_preservation: 100
+                      stage_4_cover:
+                        status: "passed"
+                        cover_compliance: 100
+                      stage_5_doc_lint:
+                        status: "passed"
+                        lint_errors: 0
+                    validation_checks:
+                      CHK_BUNDLE_MAGNET: "passed"
+                      CHK_BUNDLE_TIMER: "passed"
+                      CHK_ENCLOSURE_H_FORMULA: "passed"
+                      CHK_PHASE_BALANCE: "passed"
+                      CHK_CLEARANCE_VIOLATIONS: "passed"
+                      CHK_THERMAL_VIOLATIONS: "passed"
+                      CHK_FORMULA_PRESERVATION: "passed"
+                    documents:
+                      excel_url: "https://s3.kis-estimator.com/estimates/EST-20251118-0001.xlsx"
+                      pdf_url: "https://s3.kis-estimator.com/estimates/EST-20251118-0001.pdf"
+                    evidence:
+                      evidence_pack_url: "https://s3.kis-estimator.com/evidence/EST-20251118-0001.zip"
+                      sha256: "a3b2c1d4e5f6..."
+                    total_price: 1250000
+                    total_price_with_vat: 1375000
+
+        '400':
+          description: 잘못된 요청 (입력 검증 실패)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                validation_error:
+                  summary: 입력 검증 실패
+                  value:
+                    code: "E_VALIDATION"
+                    message: "입력 데이터 검증 실패"
+                    hint: "main_breaker.ampere는 필수입니다"
+                    traceId: "trace-123456"
+                    meta:
+                      dedupKey: "dedup-789012"
+
+        '422':
+          description: 검증 게이트 실패 (견적 차단)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+              examples:
+                phase_balance_failed:
+                  summary: 상평형 검증 실패
+                  value:
+                    code: "E_VALIDATION_GATE"
+                    message: "CHK_PHASE_BALANCE 검증 실패"
+                    hint: "상평형이 4%를 초과했습니다 (현재: 5.2%). 분기차단기 배치를 재조정하세요."
+                    traceId: "trace-234567"
+                    meta:
+                      dedupKey: "dedup-890123"
+                      failed_checks:
+                        - CHK_PHASE_BALANCE
+                      phase_balance_details:
+                        R_current: 100
+                        S_current: 95
+                        T_current: 110
+                        phase_balance: 5.2
+                        threshold: 4.0
+
+        '500':
+          description: 내부 서버 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /estimates/{estimate_id}:
+    get:
+      tags:
+        - estimates
+      summary: 견적 조회
+      description: 생성된 견적을 조회합니다.
+      operationId: getEstimate
+
+      parameters:
+        - name: estimate_id
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '^EST-\d{8}-\d{4}$'
+          description: 견적 ID (형식: EST-YYYYMMDD-NNNN)
+          example: "EST-20251118-0001"
+
+      responses:
+        '200':
+          description: 견적 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EstimateResponse'
+
+        '404':
+          description: 견적을 찾을 수 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /estimates/validate:
+    post:
+      tags:
+        - validation
+      summary: 검증만 수행 (견적 생성 없이)
+      description: |
+        견적을 생성하지 않고 검증만 수행합니다.
+        FIX-4 파이프라인의 Stage 1~2만 실행하여 검증 결과를 반환합니다.
+
+      operationId: validateEstimate
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EstimateRequest'
+
+      responses:
+        '200':
+          description: 검증 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationResponse'
+
+        '422':
+          description: 검증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+
+  /catalog/breakers:
+    get:
+      tags:
+        - catalog
+      summary: 차단기 카탈로그 조회
+      description: |
+        차단기 카탈로그를 조회합니다.
+
+        ## 지원 브랜드
+        - SANGDO (상도차단기)
+        - LS (LS차단기)
+
+        ## 차단기 종류
+        - MCCB (배선용차단기)
+        - ELB (누전차단기)
+
+        ## 시리즈
+        - 경제형 (Economy): 37kA, 저렴
+        - 표준형 (Standard): 50kA, 고가
+        - 소형 (Small): 2.5kA, SIE-32/SIB-32/32GRHS/BS-32
+
+      operationId: getBreakerCatalog
+
+      parameters:
+        - name: category
+          in: query
+          schema:
+            type: string
+            enum: [MCCB, ELB]
+          description: 차단기 종류 필터
+
+        - name: brand
+          in: query
+          schema:
+            type: string
+            enum: [SANGDO, LS]
+          description: 브랜드 필터
+
+        - name: series
+          in: query
+          schema:
+            type: string
+            enum: [경제형, 표준형, 소형]
+          description: 시리즈 필터
+
+        - name: poles
+          in: query
+          schema:
+            type: integer
+            enum: [2, 3, 4]
+          description: 극수 필터
+
+        - name: frame_AF
+          in: query
+          schema:
+            type: integer
+            enum: [30, 50, 60, 100, 125, 200, 225, 250, 400, 600, 800]
+          description: 프레임 AF 필터
+
+      responses:
+        '200':
+          description: 카탈로그 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BreakerCatalogResponse'
+
+  /catalog/enclosures:
+    get:
+      tags:
+        - catalog
+      summary: 외함 카탈로그 조회
+      description: |
+        외함 카탈로그를 조회합니다.
+
+        ## 설치 유형
+        - 옥내노출 (Indoor Exposed)
+        - 옥외노출 (Outdoor Exposed)
+        - 옥내자립 (Indoor Freestanding)
+        - 옥외자립 (Outdoor Freestanding)
+        - 매입함 (Recessed)
+        - 전주부착형 (Pole Mounted)
+        - FRP함 (FRP Box)
+        - 하이박스 (High Box)
+
+        ## 재질
+        - STEEL 1.0T, 1.6T
+        - SUS201 1.2T
+        - SUS304 1.2T
+
+      operationId: getEnclosureCatalog
+
+      parameters:
+        - name: installation_type
+          in: query
+          schema:
+            type: string
+            enum: [옥내노출, 옥외노출, 옥내자립, 옥외자립, 매입함, 전주부착형, FRP함, 하이박스]
+          description: 설치 유형 필터
+
+        - name: material
+          in: query
+          schema:
+            type: string
+            enum: ["STEEL 1.0T", "STEEL 1.6T", "SUS201 1.2T", "SUS304 1.2T"]
+          description: 재질 필터
+
+        - name: min_width
+          in: query
+          schema:
+            type: integer
+            minimum: 400
+          description: 최소 폭 (mm)
+
+        - name: max_width
+          in: query
+          schema:
+            type: integer
+            maximum: 1200
+          description: 최대 폭 (mm)
+
+      responses:
+        '200':
+          description: 카탈로그 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnclosureCatalogResponse'
+
+  /catalog/accessories:
+    get:
+      tags:
+        - catalog
+      summary: 부속자재 카탈로그 조회
+      description: |
+        부속자재 카탈로그를 조회합니다.
+
+        ## 부속자재 종류
+        - 마그네트 컨택터 (Magnet Contactor): MC-9 ~ MC-100
+        - 타이머 (Timer): ON-DELAY, OFF-DELAY, STAR-DELTA, 24H, SUNSET
+        - 계량기 (Meter): V/A-METER, 단상, 3상, CT
+        - SPD (서지보호장치)
+        - PBL 스위치 (Push Button Switch)
+
+      operationId: getAccessoryCatalog
+
+      parameters:
+        - name: category
+          in: query
+          schema:
+            type: string
+            enum: [magnet, timer, meter, spd, switch]
+          description: 부속자재 종류 필터
+
+      responses:
+        '200':
+          description: 카탈로그 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccessoryCatalogResponse'
+
+  /health:
+    get:
+      tags:
+        - health
+      summary: Health check
+      description: |
+        시스템 상태를 확인합니다.
+
+        ## 확인 항목
+        - Database connection
+        - Redis connection
+        - JWKS availability
+        - Catalog cache status
+
+      operationId: healthCheck
+      security: []  # No authentication required
+
+      responses:
+        '200':
+          description: 시스템 정상
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+              example:
+                status: "healthy"
+                timestamp: "2025-11-18T10:30:00+09:00"
+                checks:
+                  database: "ok"
+                  redis: "ok"
+                  jwks: "ok"
+                  catalog_cache: "ok"
+                uptime_seconds: 86400
+
+        '503':
+          description: 시스템 비정상
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+              example:
+                status: "unhealthy"
+                timestamp: "2025-11-18T10:30:00+09:00"
+                checks:
+                  database: "error"
+                  redis: "ok"
+                  jwks: "ok"
+                  catalog_cache: "degraded"
+                uptime_seconds: 86400
+                errors:
+                  - "Database connection timeout"
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        JWT 인증 (JWKS 검증)
+
+        Header: Authorization: Bearer <token>
+
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: |
+        API Key 인증 (서비스 간 통신용)
+
+        Header: X-API-Key: <api-key>
+
+  schemas:
+    EstimateRequest:
+      type: object
+      required:
+        - customer_name
+        - panels
+      properties:
+        customer_name:
+          type: string
+          description: 고객명 (거래처명)
+          minLength: 1
+          maxLength: 100
+          example: "ABC건설"
+
+        project_name:
+          type: string
+          description: 건명 (프로젝트명)
+          maxLength: 200
+          example: "신축 아파트 전기공사"
+
+        panels:
+          type: array
+          description: 분전반 목록
+          minItems: 1
+          maxItems: 10
+          items:
+            $ref: '#/components/schemas/PanelInput'
+
+        options:
+          type: object
+          description: 견적 옵션
+          properties:
+            breaker_brand_preference:
+              type: string
+              enum: [SANGDO, LS]
+              description: 차단기 브랜드 선호도
+
+            use_economy_series:
+              type: boolean
+              default: true
+              description: 경제형 우선 사용 여부
+
+            include_evidence_pack:
+              type: boolean
+              default: true
+              description: Evidence 팩 포함 여부
+
+    PanelInput:
+      type: object
+      required:
+        - main_breaker
+        - branch_breakers
+        - enclosure
+      properties:
+        panel_name:
+          type: string
+          description: 분전반명 (없으면 "분전반" 또는 "분전반1", "분전반2"...)
+          maxLength: 50
+          example: "분전반1"
+
+        main_breaker:
+          $ref: '#/components/schemas/BreakerInput'
+
+        branch_breakers:
+          type: array
+          description: 분기차단기 목록
+          minItems: 1
+          maxItems: 50
+          items:
+            $ref: '#/components/schemas/BreakerInput'
+
+        accessories:
+          type: array
+          description: 부속자재 목록
+          items:
+            $ref: '#/components/schemas/AccessoryInput'
+
+        enclosure:
+          $ref: '#/components/schemas/EnclosureInput'
+
+    BreakerInput:
+      type: object
+      required:
+        - model
+        - ampere
+        - poles
+      properties:
+        model:
+          type: string
+          description: |
+            차단기 모델명
+            - SANGDO: S-[B|E|C]-[E|S]-[프레임]-[극수]
+            - LS: A|E-[B]-[N|S]-[프레임]-[극수]
+          pattern: '^(S[BEC][ES]|[AE]B[NS])-?\d{1,3}[FB]?$'
+          example: "SBE-104"
+
+        ampere:
+          type: integer
+          description: 정격 전류 (AT)
+          minimum: 15
+          maximum: 800
+          example: 75
+
+        poles:
+          type: integer
+          description: 극수
+          enum: [2, 3, 4]
+          example: 4
+
+        quantity:
+          type: integer
+          description: 수량 (분기차단기만, 메인은 1 고정)
+          minimum: 1
+          maximum: 50
+          default: 1
+
+    AccessoryInput:
+      type: object
+      required:
+        - type
+        - model
+        - quantity
+      properties:
+        type:
+          type: string
+          description: 부속자재 종류
+          enum: [magnet, timer, meter, spd, switch]
+          example: "magnet"
+
+        model:
+          type: string
+          description: 모델명
+          example: "MC-22"
+
+        quantity:
+          type: integer
+          description: 수량
+          minimum: 1
+          maximum: 20
+          example: 2
+
+    EnclosureInput:
+      type: object
+      required:
+        - type
+        - material
+      properties:
+        type:
+          type: string
+          description: 설치 유형
+          enum: [옥내노출, 옥외노출, 옥내자립, 옥외자립, 매입함, 전주부착형, FRP함, 하이박스]
+          example: "옥내노출"
+
+        material:
+          type: string
+          description: 재질 및 두께
+          enum: ["STEEL 1.0T", "STEEL 1.6T", "SUS201 1.2T", "SUS304 1.2T"]
+          example: "STEEL 1.6T"
+
+        custom_size:
+          type: object
+          description: 커스텀 크기 (지정하지 않으면 자동 계산)
+          properties:
+            width_mm:
+              type: integer
+              minimum: 400
+              maximum: 1200
+            height_mm:
+              type: integer
+              minimum: 400
+              maximum: 2000
+            depth_mm:
+              type: integer
+              minimum: 150
+              maximum: 400
+
+    EstimateResponse:
+      type: object
+      required:
+        - estimate_id
+        - status
+        - created_at
+        - pipeline_results
+        - validation_checks
+        - total_price
+        - total_price_with_vat
+      properties:
+        estimate_id:
+          type: string
+          pattern: '^EST-\d{8}-\d{4}$'
+          description: 견적 ID
+          example: "EST-20251118-0001"
+
+        status:
+          type: string
+          enum: [completed, failed, processing]
+          description: 견적 상태
+
+        created_at:
+          type: string
+          format: date-time
+          description: 생성 일시 (UTC+09:00)
+
+        pipeline_results:
+          $ref: '#/components/schemas/PipelineResults'
+
+        validation_checks:
+          $ref: '#/components/schemas/ValidationChecks'
+
+        documents:
+          type: object
+          properties:
+            excel_url:
+              type: string
+              format: uri
+              description: Excel 문서 다운로드 URL
+            pdf_url:
+              type: string
+              format: uri
+              description: PDF 문서 다운로드 URL
+
+        evidence:
+          type: object
+          properties:
+            evidence_pack_url:
+              type: string
+              format: uri
+              description: Evidence 팩 다운로드 URL
+            sha256:
+              type: string
+              pattern: '^[a-f0-9]{64}$'
+              description: Evidence 팩 SHA256 해시
+
+        total_price:
+          type: integer
+          description: 총 견적가 (부가세 제외)
+          example: 1250000
+
+        total_price_with_vat:
+          type: integer
+          description: 총 견적가 (부가세 포함)
+          example: 1375000
+
+    PipelineResults:
+      type: object
+      required:
+        - stage_1_enclosure
+        - stage_2_breaker
+        - stage_3_format
+        - stage_4_cover
+        - stage_5_doc_lint
+      properties:
+        stage_1_enclosure:
+          type: object
+          properties:
+            status:
+              type: string
+              enum: [passed, failed]
+            fit_score:
+              type: number
+              format: float
+              minimum: 0
+              maximum: 1
+              description: 외함 적합도 (≥ 0.90 필수)
+            enclosure_size:
+              type: array
+              items:
+                type: integer
+              minItems: 3
+              maxItems: 3
+              description: 외함 크기 [W, H, D] (mm)
+
+        stage_2_breaker:
+          type: object
+          properties:
+            status:
+              type: string
+              enum: [passed, failed]
+            phase_balance:
+              type: number
+              format: float
+              description: 상평형 (%) (≤ 4% 필수)
+            clearance_violations:
+              type: integer
+              description: 간섭 위반 건수 (= 0 필수)
+            thermal_violations:
+              type: integer
+              description: 열밀도 위반 건수 (= 0 필수)
+
+        stage_3_format:
+          type: object
+          properties:
+            status:
+              type: string
+              enum: [passed, failed]
+            formula_preservation:
+              type: integer
+              description: 수식 보존율 (%) (= 100% 필수)
+
+        stage_4_cover:
+          type: object
+          properties:
+            status:
+              type: string
+              enum: [passed, failed]
+            cover_compliance:
+              type: integer
+              description: 표지 규칙 준수율 (%) (= 100% 필수)
+
+        stage_5_doc_lint:
+          type: object
+          properties:
+            status:
+              type: string
+              enum: [passed, failed]
+            lint_errors:
+              type: integer
+              description: 린트 오류 건수 (= 0 필수)
+
+    ValidationChecks:
+      type: object
+      required:
+        - CHK_BUNDLE_MAGNET
+        - CHK_BUNDLE_TIMER
+        - CHK_ENCLOSURE_H_FORMULA
+        - CHK_PHASE_BALANCE
+        - CHK_CLEARANCE_VIOLATIONS
+        - CHK_THERMAL_VIOLATIONS
+        - CHK_FORMULA_PRESERVATION
+      properties:
+        CHK_BUNDLE_MAGNET:
+          type: string
+          enum: [passed, failed, skipped]
+          description: 마그네트 동반자재 포함 확인
+        CHK_BUNDLE_TIMER:
+          type: string
+          enum: [passed, failed, skipped]
+          description: 타이머 동반자재 포함 확인
+        CHK_ENCLOSURE_H_FORMULA:
+          type: string
+          enum: [passed, failed]
+          description: 외함 높이 공식 적용 확인
+        CHK_PHASE_BALANCE:
+          type: string
+          enum: [passed, failed]
+          description: 상평형 ≤ 4% 확인
+        CHK_CLEARANCE_VIOLATIONS:
+          type: string
+          enum: [passed, failed]
+          description: 간섭 = 0 확인
+        CHK_THERMAL_VIOLATIONS:
+          type: string
+          enum: [passed, failed]
+          description: 열밀도 = 0 확인
+        CHK_FORMULA_PRESERVATION:
+          type: string
+          enum: [passed, failed]
+          description: Excel 수식 보존 = 100% 확인
+
+    ValidationResponse:
+      type: object
+      required:
+        - validation_id
+        - status
+        - checks
+      properties:
+        validation_id:
+          type: string
+          pattern: '^VAL-\d{8}-\d{4}$'
+          description: 검증 ID
+
+        status:
+          type: string
+          enum: [passed, failed]
+          description: 전체 검증 상태
+
+        checks:
+          $ref: '#/components/schemas/ValidationChecks'
+
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              check_id:
+                type: string
+              message:
+                type: string
+              hint:
+                type: string
+
+    BreakerCatalogResponse:
+      type: object
+      required:
+        - total_count
+        - items
+      properties:
+        total_count:
+          type: integer
+          description: 총 항목 수
+
+        filters_applied:
+          type: object
+          description: 적용된 필터
+
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/BreakerCatalogItem'
+
+    BreakerCatalogItem:
+      type: object
+      required:
+        - model
+        - brand
+        - category
+        - series
+        - poles
+        - frame_AF
+        - ampere
+        - capacity_kA
+        - price
+        - size_mm
+      properties:
+        model:
+          type: string
+          description: 모델명
+          example: "SBE-104"
+        brand:
+          type: string
+          enum: [SANGDO, LS]
+          description: 브랜드
+        category:
+          type: string
+          enum: [MCCB, ELB]
+          description: 차단기 종류
+        series:
+          type: string
+          enum: [경제형, 표준형, 소형]
+          description: 시리즈
+        poles:
+          type: integer
+          enum: [2, 3, 4]
+          description: 극수
+        frame_AF:
+          type: integer
+          description: 프레임 (AF)
+        ampere:
+          type: array
+          items:
+            type: integer
+          description: 지원 암페어 목록
+        capacity_kA:
+          type: number
+          description: 차단용량 (kA)
+        price:
+          type: integer
+          description: 견적가 (원)
+        size_mm:
+          type: array
+          items:
+            type: integer
+          minItems: 3
+          maxItems: 3
+          description: 크기 [W, H, D] (mm)
+
+    EnclosureCatalogResponse:
+      type: object
+      required:
+        - total_count
+        - items
+      properties:
+        total_count:
+          type: integer
+          description: 총 항목 수
+
+        filters_applied:
+          type: object
+          description: 적용된 필터
+
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/EnclosureCatalogItem'
+
+    EnclosureCatalogItem:
+      type: object
+      required:
+        - model
+        - category
+        - material
+        - thickness_mm
+        - install_location
+        - size_mm
+        - price
+      properties:
+        model:
+          type: string
+          description: 모델명
+          example: "HDS-600*400*200"
+        category:
+          type: string
+          description: 외함 종류
+        material:
+          type: string
+          enum: [steel, sus201, sus304]
+          description: 재질
+        thickness_mm:
+          type: number
+          description: 두께 (mm)
+        install_location:
+          type: string
+          enum: [indoor, outdoor]
+          description: 설치 장소
+        size_mm:
+          type: array
+          items:
+            type: integer
+          minItems: 3
+          maxItems: 3
+          description: 크기 [W, H, D] (mm)
+        price:
+          type: integer
+          description: 견적가 (원)
+        custom_required:
+          type: boolean
+          description: 주문제작 필요 여부
+
+    AccessoryCatalogResponse:
+      type: object
+      required:
+        - total_count
+        - items
+      properties:
+        total_count:
+          type: integer
+          description: 총 항목 수
+
+        filters_applied:
+          type: object
+          description: 적용된 필터
+
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AccessoryCatalogItem'
+
+    AccessoryCatalogItem:
+      type: object
+      required:
+        - model
+        - category
+        - price
+      properties:
+        model:
+          type: string
+          description: 모델명
+          example: "MC-22"
+        category:
+          type: string
+          enum: [magnet, timer, meter, spd, switch]
+          description: 부속자재 종류
+        capacity_A:
+          type: integer
+          description: 용량 (A) - 마그네트/계량기용
+        size_mm:
+          type: array
+          items:
+            type: integer
+          description: 크기 [W, H, D] (mm)
+        price:
+          type: integer
+          description: 견적가 (원)
+        mandatory_bundles:
+          type: array
+          items:
+            type: object
+            properties:
+              item_id:
+                type: string
+              qty_per:
+                type: integer
+              price:
+                type: integer
+          description: 필수 동반자재
+
+    HealthResponse:
+      type: object
+      required:
+        - status
+        - timestamp
+        - checks
+      properties:
+        status:
+          type: string
+          enum: [healthy, degraded, unhealthy]
+          description: 전체 시스템 상태
+
+        timestamp:
+          type: string
+          format: date-time
+          description: 확인 일시
+
+        checks:
+          type: object
+          additionalProperties:
+            type: string
+            enum: [ok, degraded, error]
+          description: 개별 체크 결과
+
+        uptime_seconds:
+          type: integer
+          description: 가동 시간 (초)
+
+        errors:
+          type: array
+          items:
+            type: string
+          description: 오류 메시지 목록
+
+    Error:
+      type: object
+      required:
+        - code
+        - message
+        - traceId
+      properties:
+        code:
+          type: string
+          description: 오류 코드
+          enum:
+            - E_VALIDATION
+            - E_INTERNAL
+            - E_NOT_FOUND
+            - E_UNAUTHORIZED
+            - E_FORBIDDEN
+            - E_RATE_LIMIT
+
+        message:
+          type: string
+          description: 오류 메시지
+
+        hint:
+          type: string
+          description: 해결 방법 힌트
+
+        traceId:
+          type: string
+          description: 추적 ID (OpenTelemetry)
+
+        meta:
+          type: object
+          properties:
+            dedupKey:
+              type: string
+              description: 중복 제거 키
+          additionalProperties: true
+
+    ValidationError:
+      allOf:
+        - $ref: '#/components/schemas/Error'
+        - type: object
+          properties:
+            failed_checks:
+              type: array
+              items:
+                type: string
+              description: 실패한 검증 체크 목록

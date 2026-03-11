@@ -1,0 +1,18 @@
+{
+  "test_type": "phase3_ssot_smoke",
+  "timestamp": "2025-10-05T00:00:00Z",
+  "tests": {
+    "alias_normalization": {
+      "canonical_form": "4P 200AT 225AF",
+      "alias_form": "4P 200AT 225AF",
+      "match": true
+    },
+    "spec_symbol_conversion": {
+      "original": "600×765×150",
+      "converted": "600*765*150",
+      "expected": "600*765*150",
+      "match": true
+    }
+  },
+  "status": "passed"
+}

@@ -1,0 +1,388 @@
+{
+  "$schema": "endpoints_probe_config_v1.0.0",
+  "description": "Phase I Endpoint Probe Configuration - Expected status codes for 9 core endpoints",
+  "version": "1.0.0",
+  "created_for": "Phase I - Test Regrade",
+  "endpoints": [
+    {
+      "path": "/health",
+      "method": "GET",
+      "category": "ops",
+      "description": "Health check endpoint (basic liveness)",
+      "expected_codes": [200, 503],
+      "scenarios": [
+        {
+          "name": "healthy",
+          "expected_code": 200,
+          "reason": "All dependencies available"
+        },
+        {
+          "name": "db_down",
+          "expected_code": 503,
+          "reason": "Database connection unavailable"
+        }
+      ]
+    },
+    {
+      "path": "/readyz",
+      "method": "GET",
+      "category": "ops",
+      "description": "Readiness check endpoint (full system check)",
+      "expected_codes": [200, 503],
+      "scenarios": [
+        {
+          "name": "ready",
+          "expected_code": 200,
+          "reason": "All dependencies healthy"
+        },
+        {
+          "name": "db_down",
+          "expected_code": 503,
+          "reason": "Database connection unavailable"
+        },
+        {
+          "name": "cache_down",
+          "expected_code": 503,
+          "reason": "Redis cache unavailable"
+        }
+      ]
+    },
+    {
+      "path": "/v1/estimate",
+      "method": "POST",
+      "category": "estimate",
+      "description": "Create new estimate (Stage 1+2+3 full pipeline)",
+      "expected_codes": [201, 401, 403, 422, 503],
+      "scenarios": [
+        {
+          "name": "valid_request",
+          "expected_code": 201,
+          "reason": "Estimate created successfully",
+          "requires_payload": true
+        },
+        {
+          "name": "missing_auth",
+          "expected_code": 401,
+          "reason": "No authorization token provided"
+        },
+        {
+          "name": "invalid_token",
+          "expected_code": 403,
+          "reason": "Invalid or expired authorization token"
+        },
+        {
+          "name": "missing_main_breaker",
+          "expected_code": 422,
+          "reason": "Main breaker not specified"
+        },
+        {
+          "name": "invalid_poles",
+          "expected_code": 422,
+          "reason": "Invalid poles value (must be 2, 3, or 4)"
+        },
+        {
+          "name": "empty_breakers",
+          "expected_code": 422,
+          "reason": "Breaker list is empty"
+        },
+        {
+          "name": "system_error",
+          "expected_code": 503,
+          "reason": "Internal system error (database, solver failure)"
+        }
+      ]
+    },
+    {
+      "path": "/v1/estimate/plan",
+      "method": "POST",
+      "category": "estimate",
+      "description": "Plan estimate (dry-run without execution)",
+      "expected_codes": [200, 401, 403, 422, 503],
+      "scenarios": [
+        {
+          "name": "valid_request",
+          "expected_code": 200,
+          "reason": "Estimate plan generated successfully",
+          "requires_payload": true
+        },
+        {
+          "name": "missing_auth",
+          "expected_code": 401,
+          "reason": "No authorization token provided"
+        },
+        {
+          "name": "invalid_token",
+          "expected_code": 403,
+          "reason": "Invalid or expired authorization token"
+        },
+        {
+          "name": "validation_error",
+          "expected_code": 422,
+          "reason": "Input validation failed"
+        },
+        {
+          "name": "system_error",
+          "expected_code": 503,
+          "reason": "Internal system error"
+        }
+      ]
+    },
+    {
+      "path": "/v1/estimate/execute",
+      "method": "POST",
+      "category": "estimate",
+      "description": "Execute estimate from plan",
+      "expected_codes": [201, 401, 403, 422, 503],
+      "scenarios": [
+        {
+          "name": "valid_request",
+          "expected_code": 201,
+          "reason": "Estimate executed successfully",
+          "requires_payload": true
+        },
+        {
+          "name": "missing_auth",
+          "expected_code": 401,
+          "reason": "No authorization token provided"
+        },
+        {
+          "name": "invalid_token",
+          "expected_code": 403,
+          "reason": "Invalid or expired authorization token"
+        },
+        {
+          "name": "missing_plan_id",
+          "expected_code": 422,
+          "reason": "plan_id not provided or plan not found"
+        },
+        {
+          "name": "system_error",
+          "expected_code": 503,
+          "reason": "Internal system error during execution"
+        }
+      ]
+    },
+    {
+      "path": "/v1/estimate/{id}",
+      "method": "GET",
+      "category": "estimate",
+      "description": "Retrieve estimate by ID",
+      "expected_codes": [200, 401, 403, 404, 501],
+      "scenarios": [
+        {
+          "name": "valid_id",
+          "expected_code": 200,
+          "reason": "Estimate found and returned"
+        },
+        {
+          "name": "missing_auth",
+          "expected_code": 401,
+          "reason": "No authorization token provided"
+        },
+        {
+          "name": "invalid_token",
+          "expected_code": 403,
+          "reason": "Invalid or expired authorization token"
+        },
+        {
+          "name": "not_found",
+          "expected_code": 404,
+          "reason": "Estimate ID not found"
+        },
+        {
+          "name": "not_implemented",
+          "expected_code": 501,
+          "reason": "Endpoint not yet implemented (Phase I+1)"
+        }
+      ]
+    },
+    {
+      "path": "/v1/catalog/items",
+      "method": "GET",
+      "category": "catalog",
+      "description": "List catalog items (breakers, enclosures, accessories)",
+      "expected_codes": [200, 401, 403, 422, 503],
+      "scenarios": [
+        {
+          "name": "valid_request",
+          "expected_code": 200,
+          "reason": "Catalog items retrieved successfully"
+        },
+        {
+          "name": "missing_auth",
+          "expected_code": 401,
+          "reason": "No authorization token provided"
+        },
+        {
+          "name": "invalid_token",
+          "expected_code": 403,
+          "reason": "Invalid or expired authorization token"
+        },
+        {
+          "name": "invalid_query",
+          "expected_code": 422,
+          "reason": "Invalid query parameters (category, limit, offset)"
+        },
+        {
+          "name": "system_error",
+          "expected_code": 503,
+          "reason": "Database connection error"
+        }
+      ]
+    },
+    {
+      "path": "/v1/catalog/items/{sku}",
+      "method": "GET",
+      "category": "catalog",
+      "description": "Get catalog item by SKU",
+      "expected_codes": [200, 401, 403, 404, 503],
+      "scenarios": [
+        {
+          "name": "valid_sku",
+          "expected_code": 200,
+          "reason": "Catalog item retrieved successfully"
+        },
+        {
+          "name": "missing_auth",
+          "expected_code": 401,
+          "reason": "No authorization token provided"
+        },
+        {
+          "name": "invalid_token",
+          "expected_code": 403,
+          "reason": "Invalid or expired authorization token"
+        },
+        {
+          "name": "not_found",
+          "expected_code": 404,
+          "reason": "SKU not found in catalog"
+        },
+        {
+          "name": "system_error",
+          "expected_code": 503,
+          "reason": "Database connection error"
+        }
+      ]
+    },
+    {
+      "path": "/v1/catalog/stats",
+      "method": "GET",
+      "category": "catalog",
+      "description": "Get catalog statistics (total items, categories, brands)",
+      "expected_codes": [200, 401, 403, 503],
+      "scenarios": [
+        {
+          "name": "valid_request",
+          "expected_code": 200,
+          "reason": "Catalog statistics retrieved successfully"
+        },
+        {
+          "name": "missing_auth",
+          "expected_code": 401,
+          "reason": "No authorization token provided"
+        },
+        {
+          "name": "invalid_token",
+          "expected_code": 403,
+          "reason": "Invalid or expired authorization token"
+        },
+        {
+          "name": "system_error",
+          "expected_code": 503,
+          "reason": "Database connection error"
+        }
+      ]
+    }
+  ],
+  "test_matrix": {
+    "auth_scenarios": {
+      "no_auth": {
+        "expected": 401,
+        "applies_to": ["estimate", "catalog"],
+        "description": "No Authorization header"
+      },
+      "invalid_token": {
+        "expected": 403,
+        "applies_to": ["estimate", "catalog"],
+        "description": "Invalid or expired JWT token"
+      }
+    },
+    "validation_scenarios": {
+      "missing_main_breaker": {
+        "expected": 422,
+        "applies_to": ["/v1/estimate", "/v1/estimate/plan"],
+        "payload": {
+          "panels": [
+            {
+              "breakers": []
+            }
+          ]
+        }
+      },
+      "invalid_poles": {
+        "expected": 422,
+        "applies_to": ["/v1/estimate", "/v1/estimate/plan"],
+        "payload": {
+          "panels": [
+            {
+              "breakers": [
+                {
+                  "poles": 1,
+                  "current_a": 100,
+                  "frame_af": 100
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "system_scenarios": {
+      "db_down": {
+        "expected": 503,
+        "applies_to": ["all"],
+        "description": "Database connection unavailable"
+      }
+    }
+  },
+  "probe_execution": {
+    "execution_order": [
+      "/health",
+      "/readyz",
+      "/v1/catalog/items",
+      "/v1/catalog/items/{sku}",
+      "/v1/catalog/stats",
+      "/v1/estimate/plan",
+      "/v1/estimate",
+      "/v1/estimate/execute",
+      "/v1/estimate/{id}"
+    ],
+    "timeout_per_endpoint_ms": 5000,
+    "retry_policy": {
+      "max_retries": 3,
+      "backoff_ms": 1000,
+      "retry_on": [500, 502, 503, 504]
+    },
+    "parallel_execution": false,
+    "stop_on_first_failure": false
+  },
+  "success_criteria": {
+    "min_endpoints_pass": 9,
+    "min_pass_rate": 1.0,
+    "max_failures": 0,
+    "required_scenarios": [
+      "healthy",
+      "ready",
+      "valid_request",
+      "validation_error",
+      "not_found"
+    ]
+  },
+  "evidence_output": {
+    "format": "json",
+    "path": "out/evidence/endpoints_probe_result.json",
+    "include_response_body": true,
+    "include_headers": true,
+    "include_timing": true
+  }
+}

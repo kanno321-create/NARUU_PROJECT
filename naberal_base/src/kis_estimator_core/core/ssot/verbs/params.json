@@ -1,0 +1,119 @@
+{
+  "meta": {
+    "version": "1.0.0",
+    "generated": "2025-10-15T22:45:00Z",
+    "purpose": "SSOT Verb Parameters Definition (I-3.3)",
+    "law": "LAW-02: SSOT 준수, LAW-03: 하드코딩 금지"
+  },
+  "verb_spec_model": {
+    "description": "VerbSpec 최상위 모델",
+    "fields": {
+      "verb_name": {
+        "type": "str",
+        "required": true,
+        "description": "Verb 이름 (대문자, 예: PICK_ENCLOSURE, PLACE)"
+      },
+      "params": {
+        "type": "object",
+        "required": true,
+        "description": "Verb별 파라미터 객체"
+      },
+      "version": {
+        "type": "str",
+        "required": false,
+        "default": "1.0.0",
+        "description": "Verb spec 버전"
+      }
+    }
+  },
+  "verb_params": {
+    "PICK_ENCLOSURE": {
+      "description": "외함 선택 Verb 파라미터",
+      "fields": {
+        "main_breaker": {
+          "type": "object",
+          "required": true,
+          "description": "메인 차단기 사양 (poles, current, frame)"
+        },
+        "branch_breakers": {
+          "type": "array",
+          "required": true,
+          "description": "분기 차단기 목록"
+        },
+        "enclosure_type": {
+          "type": "str",
+          "required": true,
+          "description": "외함 타입 (옥내노출, 옥외노출 등)"
+        },
+        "material": {
+          "type": "str",
+          "required": true,
+          "description": "재질 (STEEL, SUS201 등)"
+        },
+        "thickness": {
+          "type": "str",
+          "required": true,
+          "description": "두께 (1.6T, 1.2T 등)"
+        },
+        "accessories": {
+          "type": "array",
+          "required": false,
+          "default": [],
+          "description": "부속자재 목록"
+        },
+        "panel": {
+          "type": "str",
+          "required": false,
+          "default": "default",
+          "description": "패널 이름"
+        },
+        "strategy": {
+          "type": "str",
+          "required": false,
+          "default": "auto",
+          "description": "선택 전략 (auto, manual, optimal)"
+        }
+      }
+    },
+    "PLACE": {
+      "description": "브레이커 배치 Verb 파라미터",
+      "fields": {
+        "breakers": {
+          "type": "array",
+          "required": true,
+          "description": "배치할 브레이커 ID 목록 (예: ['MAIN', 'BR1', 'BR2'])"
+        },
+        "panel": {
+          "type": "str",
+          "required": false,
+          "default": "default",
+          "description": "패널 이름"
+        },
+        "strategy": {
+          "type": "str",
+          "required": false,
+          "default": "compact",
+          "description": "배치 전략 (compact, balanced, minimize_heat)"
+        },
+        "algo": {
+          "type": "str",
+          "required": false,
+          "default": "heuristic",
+          "description": "알고리즘 선택 (heuristic, ortools)"
+        },
+        "seed": {
+          "type": "int",
+          "required": false,
+          "default": 42,
+          "description": "랜덤 시드 (재현성)"
+        }
+      }
+    }
+  },
+  "validation_rules": {
+    "no_default_injection": true,
+    "strict_types": true,
+    "unknown_verb_error": "VERB_002",
+    "validation_error": "VALIDATION_VERB_001"
+  }
+}

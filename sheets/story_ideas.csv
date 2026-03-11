@@ -1,0 +1,4 @@
+# filename: sheets/story_ideas.csv
+Story_ID,Title,Summary,SourceLink,PopularityScore,Language,Tags,Notes,Status
+EP0001,일본인 아내의 굿즈 사건,"남편이 아내의 아이돌 굿즈를 버려서 난리난 사연",https://...,982,ko,"주부,국제결혼,아이돌","반전 후 공감 포인트 강함","new"
+EP0002,명절에 생긴 소동,"첫 추석 준비 중 생긴 소동 이야기",https://...,744,ko,"명절,시댁,요리","라스트 문장에 CTA 넣기","new"

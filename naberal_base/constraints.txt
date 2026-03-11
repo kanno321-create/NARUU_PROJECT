@@ -1,0 +1,11 @@
+# CI/CD Stability Lock-in (6-Axis Unification)
+# DO NOT modify these versions without Evidence Pack approval
+
+# Core API & HTTP
+httpx==0.24.1
+supabase==2.3.0
+
+# Testing Framework (CRITICAL: event loop compatibility)
+# pytest-asyncio: 0.23+ officially supports session-scoped async fixtures via asyncio_default_fixture_loop_scope
+pytest-asyncio==0.23.8
+asgi-lifespan==2.1.0

@@ -1,0 +1,58 @@
+# KIS Estimator - Kustomization
+# Use with: kubectl apply -k k8s/
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+metadata:
+  name: kis-estimator
+
+# Common labels applied to all resources
+commonLabels:
+  app: kis-estimator
+  managed-by: kustomize
+
+# Common annotations
+commonAnnotations:
+  app.kubernetes.io/name: kis-estimator
+  app.kubernetes.io/version: "2.0.0"
+  app.kubernetes.io/component: api
+
+# Resources to include
+resources:
+  - namespace.yaml
+  - configmap.yaml
+  - secrets.yaml
+  - deployment.yaml
+  - service.yaml
+  - ingress.yaml
+  - hpa.yaml
+
+# Image configuration (can be overridden)
+images:
+  - name: ghcr.io/naberal/kis-estimator
+    newTag: latest
+
+# ConfigMap generator (alternative to static configmap.yaml)
+# configMapGenerator:
+#   - name: kis-estimator-config
+#     namespace: kis-estimator
+#     literals:
+#       - environment=production
+#       - log_level=INFO
+
+# Secret generator (for local testing only - use external secrets in production)
+# secretGenerator:
+#   - name: kis-estimator-secrets
+#     namespace: kis-estimator
+#     type: Opaque
+#     literals:
+#       - database_url=postgresql+asyncpg://user:pass@localhost:5432/db
+#       - jwt_secret=local-dev-secret-32-characters!!
+
+# Patches for environment-specific customizations
+# patches:
+#   - path: patches/production-replicas.yaml
+#     target:
+#       kind: Deployment
+#       name: kis-estimator

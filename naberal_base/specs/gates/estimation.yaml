@@ -1,0 +1,30 @@
+version: 1
+rules:
+  balance_limit: 0.03          # 상불평형 임계 (3%)
+  spare_ratio: 0.20            # 스페어 최소 비율
+  tab_policy: "2->1&2 | 3+->1&3"
+  forbid_violations: true      # 규칙 위반은 0건이어야 함
+  fit_score_min: 0.90
+
+hard_constraints:
+  - name: multi_pole_adjacent_slots
+    description: "2P/3P는 연속 슬롯 배치"
+  - name: no_slot_overlap
+  - name: slot_width_respected
+  - name: vendor_slot_rules
+  - name: spare_reservation
+
+cost_function:
+  # J = α*함사이즈 + β*상불평형^2 + δ*배선거리 + M*규칙위반
+  alpha: 1.0
+  beta:  4.0
+  delta: 0.5
+  M:   1e9
+
+retry_policy:
+  seeds: [17, 23, 42]
+  max_replans: 3
+
+fallback:
+  use_milp_if_imbalance_over: 0.03
+  milp_timeout_ms: 1500

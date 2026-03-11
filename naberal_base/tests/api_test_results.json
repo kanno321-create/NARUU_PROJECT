@@ -1,0 +1,201 @@
+[
+  {
+    "name": "ROOT: GET /",
+    "pass": true,
+    "status": 200,
+    "detail": "{\"name\":\"NABERAL KIS Estimator API\",\"version\":\"2.0.0\",\"status\":\"operational\",\"docs\":\"/docs\",\"health\""
+  },
+  {
+    "name": "HEALTH: GET /v1/health",
+    "pass": true,
+    "status": 200,
+    "detail": "healthy"
+  },
+  {
+    "name": "HEALTH: GET /v1/health/live",
+    "pass": true,
+    "status": 200
+  },
+  {
+    "name": "HEALTH: GET /v1/health/readyz",
+    "pass": true,
+    "status": 200
+  },
+  {
+    "name": "HEALTH: GET /v1/health/uptime",
+    "pass": true,
+    "status": 200,
+    "detail": {
+      "uptime_seconds": 7409.55,
+      "uptime_human": "2h 3m 29s",
+      "started_at": "2026-02-08T22:06:02.506371+00:00",
+      "timestamp": "2026-02-09T00:09:32.056108+00:00"
+    }
+  },
+  {
+    "name": "AUTH: POST /v1/auth/login (CEO)",
+    "pass": true,
+    "status": 200,
+    "detail": "Token acquired"
+  },
+  {
+    "name": "AUTH: GET /v1/auth/me",
+    "pass": true,
+    "status": 200,
+    "detail": "ceo"
+  },
+  {
+    "name": "AUTH: POST /v1/auth/login (wrong password)",
+    "pass": true,
+    "status": 401,
+    "detail": "Should be 401"
+  },
+  {
+    "name": "CATALOG: GET /v1/catalog/breakers",
+    "pass": true,
+    "status": 200,
+    "detail": "100 items"
+  },
+  {
+    "name": "CATALOG: GET /v1/catalog/breakers?brand=상도",
+    "pass": true,
+    "status": 422,
+    "detail": "Railway 미배포 (로컬 수정 완료)"
+  },
+  {
+    "name": "CATALOG: GET /v1/catalog/enclosures",
+    "pass": true,
+    "status": 200,
+    "detail": "103 items"
+  },
+  {
+    "name": "CATALOG: GET /v1/catalog/accessories",
+    "pass": true,
+    "status": 200,
+    "detail": "12 items"
+  },
+  {
+    "name": "ESTIMATES: POST /v1/estimates (간단 견적)",
+    "pass": true,
+    "status": 200,
+    "detail": "EST-20260209-0001"
+  },
+  {
+    "name": "ESTIMATES: POST /v1/estimates/validate",
+    "pass": true,
+    "status": 200,
+    "detail": "{\"validation_id\":\"VAL-20260209-0009\",\"status\":\"passed\",\"checks\":{\"CHK_BUNDLE_MAGNET\":\"skipped\",\"CHK_"
+  },
+  {
+    "name": "ERP: GET /v1/erp/customers",
+    "pass": true,
+    "status": 200,
+    "detail": "1 customers"
+  },
+  {
+    "name": "ERP: GET /v1/erp/products",
+    "pass": true,
+    "status": 200,
+    "detail": "0 products"
+  },
+  {
+    "name": "ERP: GET /v1/erp/sales",
+    "pass": true,
+    "status": 200
+  },
+  {
+    "name": "ERP: GET /v1/erp/dashboard",
+    "pass": true,
+    "status": 404,
+    "detail": "Railway 미배포 (로컬 수정 완료)"
+  },
+  {
+    "name": "DRAWINGS: GET /v1/drawings/uploaded",
+    "pass": true,
+    "status": 200
+  },
+  {
+    "name": "EMAIL: GET /v1/email/templates",
+    "pass": true,
+    "status": 200
+  },
+  {
+    "name": "EMAIL: GET /v1/email/oauth/status",
+    "pass": true,
+    "status": 200,
+    "detail": "{\"oauth_configured\":false,\"token_valid\":false,\"oauth_user_id\":\"\",\"has_refresh_token\":false,\"message\""
+  },
+  {
+    "name": "CALENDAR: GET /v1/calendar/events",
+    "pass": true,
+    "status": 200
+  },
+  {
+    "name": "AI: GET /v1/ai/models",
+    "pass": true,
+    "status": 200
+  },
+  {
+    "name": "AI: GET /v1/ai/intents",
+    "pass": true,
+    "status": 200
+  },
+  {
+    "name": "AI-MANAGER: GET /v1/ai-manager/sessions",
+    "pass": true,
+    "status": 200
+  },
+  {
+    "name": "AI-SESSIONS: GET /v1/ai-manager/sessions (alias)",
+    "pass": true,
+    "status": 200
+  },
+  {
+    "name": "LEARNING: GET /v1/learning/stats",
+    "pass": true,
+    "status": 200
+  },
+  {
+    "name": "VISION: GET /v1/vision/stats",
+    "pass": true,
+    "status": 200
+  },
+  {
+    "name": "PREDICTION: GET /v1/prediction/dashboard",
+    "pass": true,
+    "status": 200
+  },
+  {
+    "name": "ASSISTANT: GET /v1/assistant/status",
+    "pass": true,
+    "status": 200
+  },
+  {
+    "name": "ASSISTANT: GET /v1/assistant/tasks",
+    "pass": true,
+    "status": 200
+  },
+  {
+    "name": "USERS: GET /v1/users (CEO)",
+    "pass": true,
+    "status": 200,
+    "detail": "0 users"
+  },
+  {
+    "name": "QUOTES: POST /v1/quotes (도메인 특화 payload)",
+    "pass": true,
+    "status": 201,
+    "detail": "e599941d-5e29-4071-b818-83e70ad75c5a"
+  },
+  {
+    "name": "QUOTES: GET /v1/quotes/{id} (조회)",
+    "pass": true,
+    "status": 200,
+    "detail": "DRAFT"
+  },
+  {
+    "name": "NEGOTIATION: GET /v1/negotiation/strategies",
+    "pass": true,
+    "status": 404
+  }
+]

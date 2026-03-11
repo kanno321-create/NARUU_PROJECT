@@ -1,0 +1,63 @@
+{
+  "customer": {
+    "name": "표준고객사",
+    "project_name": "표준 테스트 프로젝트",
+    "site_address": "서울시 강남구 테헤란로 123"
+  },
+  "panels": [
+    {
+      "panel_id": "PANEL-1",
+      "panel_name": "동력분전반",
+      "breakers": [
+        {
+          "id": "MB-01",
+          "model": "SBS-204",
+          "poles": 4,
+          "current_a": 200,
+          "frame_af": 200,
+          "is_elb": false,
+          "is_main": true
+        },
+        {
+          "id": "BB-01",
+          "model": "SBE-103",
+          "poles": 3,
+          "current_a": 60,
+          "frame_af": 100,
+          "is_elb": false,
+          "is_main": false
+        },
+        {
+          "id": "BB-02",
+          "model": "SES-53",
+          "poles": 3,
+          "current_a": 40,
+          "frame_af": 50,
+          "is_elb": true,
+          "is_main": false
+        },
+        {
+          "id": "BB-03",
+          "model": "SES-53",
+          "poles": 3,
+          "current_a": 30,
+          "frame_af": 50,
+          "is_elb": true,
+          "is_main": false
+        },
+        {
+          "id": "BB-04",
+          "model": "ABN-53",
+          "poles": 3,
+          "current_a": 20,
+          "frame_af": 50,
+          "is_elb": false,
+          "is_main": false
+        }
+      ],
+      "accessories": []
+    }
+  ],
+  "enclosure_type": "옥내노출",
+  "voltage_system": "3상4선"
+}

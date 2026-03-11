@@ -1,0 +1,212 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "EPDL (Estimation Plan DSL) v0.9",
+  "description": "DSL for KIS Estimator plan execution - LLM generates ONLY plans, engines execute calculations",
+  "type": "object",
+  "required": ["global", "steps"],
+  "properties": {
+    "global": {
+      "type": "object",
+      "description": "Global parameters for entire plan",
+      "properties": {
+        "balance_limit": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 0.05,
+          "default": 0.03,
+          "description": "Maximum phase imbalance (0~5%)"
+        },
+        "spare_ratio": {
+          "type": "number",
+          "minimum": 0.1,
+          "maximum": 0.3,
+          "default": 0.2,
+          "description": "Spare space ratio (10~30%)"
+        },
+        "tab_policy": {
+          "type": "string",
+          "default": "2->1&2 | 3+->1&3",
+          "description": "Excel tab parsing policy"
+        }
+      },
+      "required": ["balance_limit", "spare_ratio", "tab_policy"]
+    },
+    "steps": {
+      "type": "array",
+      "description": "Execution steps with ONLY allowed verbs",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "description": "Single step with exactly ONE verb",
+        "oneOf": [
+          {
+            "type": "object",
+            "required": ["PLACE"],
+            "properties": {
+              "PLACE": {
+                "type": "object",
+                "description": "Request breaker placement",
+                "required": ["panel"],
+                "properties": {
+                  "panel": {
+                    "type": "string",
+                    "description": "Panel name to place breakers"
+                  },
+                  "algo": {
+                    "type": "string",
+                    "enum": ["greedy"],
+                    "default": "greedy",
+                    "description": "Placement algorithm"
+                  },
+                  "seed": {
+                    "type": "integer",
+                    "default": 42,
+                    "description": "Random seed for reproducibility"
+                  }
+                }
+              }
+            },
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "required": ["REBALANCE"],
+            "properties": {
+              "REBALANCE": {
+                "type": "object",
+                "description": "Request phase balance optimization",
+                "required": ["panel", "method"],
+                "properties": {
+                  "panel": {
+                    "type": "string",
+                    "description": "Panel name to rebalance"
+                  },
+                  "method": {
+                    "type": "string",
+                    "enum": ["swap_local", "swap_window"],
+                    "description": "Rebalancing method"
+                  },
+                  "max_iter": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 1000,
+                    "default": 100,
+                    "description": "Maximum iterations"
+                  }
+                }
+              }
+            },
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "required": ["TRY"],
+            "properties": {
+              "TRY": {
+                "type": "object",
+                "description": "Request MILP fallback optimization",
+                "properties": {
+                  "algo": {
+                    "type": "string",
+                    "enum": ["milp"],
+                    "default": "milp",
+                    "description": "Optimization algorithm"
+                  },
+                  "timeout_ms": {
+                    "type": "integer",
+                    "minimum": 100,
+                    "maximum": 5000,
+                    "default": 1500,
+                    "description": "Timeout in milliseconds"
+                  }
+                }
+              }
+            },
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "required": ["PICK_ENCLOSURE"],
+            "properties": {
+              "PICK_ENCLOSURE": {
+                "type": "object",
+                "description": "Request enclosure calculation",
+                "required": ["panel", "strategy"],
+                "properties": {
+                  "panel": {
+                    "type": "string",
+                    "description": "Panel name for enclosure"
+                  },
+                  "strategy": {
+                    "type": "string",
+                    "enum": ["min_size_with_spare", "cost_then_size"],
+                    "description": "Enclosure selection strategy"
+                  }
+                }
+              }
+            },
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "required": ["DOC_EXPORT"],
+            "properties": {
+              "DOC_EXPORT": {
+                "type": "object",
+                "description": "Request document generation",
+                "required": ["fmt"],
+                "properties": {
+                  "fmt": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": ["pdf", "xlsx", "json"]
+                    },
+                    "minItems": 1,
+                    "uniqueItems": true,
+                    "description": "Output formats"
+                  }
+                }
+              }
+            },
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "required": ["ASSERT"],
+            "properties": {
+              "ASSERT": {
+                "type": "object",
+                "description": "Define quality gate",
+                "properties": {
+                  "imbalance_max": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 0.05,
+                    "default": 0.03,
+                    "description": "Maximum allowed phase imbalance"
+                  },
+                  "violations_max": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "default": 0,
+                    "description": "Maximum allowed clearance violations"
+                  },
+                  "fit_score_min": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1,
+                    "default": 0.90,
+                    "description": "Minimum required fit score"
+                  }
+                }
+              }
+            },
+            "additionalProperties": false
+          }
+        ]
+      }
+    }
+  },
+  "additionalProperties": false
+}

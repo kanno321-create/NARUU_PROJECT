@@ -1,0 +1,14 @@
+{
+  "tiers": [
+    {"tier":"A","rate":0.05},
+    {"tier":"B","rate":0.08},
+    {"tier":"VIP","rate":0.12},
+    {"tier":"VOLUME","rate":0.03},
+    {"tier":"SEASONAL","rate":0.02}
+  ],
+  "approval_threshold": {
+    "currency": "KRW",
+    "amount": 50000000,
+    "description": "5천만원 이상 견적은 승인 필수 (Phase X Quote Lifecycle)"
+  }
+}

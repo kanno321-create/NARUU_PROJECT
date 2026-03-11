@@ -1,0 +1,134 @@
+{
+  "name": "naberal-kis-estimator",
+  "version": "2.1.0",
+  "description": "NABERAL KIS Estimator - AI 기반 전기 패널 견적 시스템",
+  "author": "NABERAL",
+  "private": true,
+  "main": "electron/main.js",
+  "homepage": "./",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "tauri:dev": "cd ../src-tauri && cargo tauri dev",
+    "tauri:build": "cd ../src-tauri && cargo tauri build",
+    "export": "cross-env TAURI_PLATFORM=1 next build",
+    "electron:dev": "concurrently \"npm run dev\" \"wait-on http://localhost:3000 && cross-env ELECTRON_RUN_AS_NODE= electron .\"",
+    "electron:build": "cross-env ELECTRON=true ELECTRON_RUN_AS_NODE= next build && electron-builder",
+    "electron:build:win": "cross-env ELECTRON=true ELECTRON_RUN_AS_NODE= next build && electron-builder --win",
+    "electron:build:mac": "cross-env ELECTRON=true ELECTRON_RUN_AS_NODE= next build && electron-builder --mac",
+    "electron:build:linux": "cross-env ELECTRON=true ELECTRON_RUN_AS_NODE= next build && electron-builder --linux",
+    "electron:publish:win": "cross-env ELECTRON=true ELECTRON_RUN_AS_NODE= next build && electron-builder --win --publish always",
+    "postinstall": "electron-builder install-app-deps"
+  },
+  "dependencies": {
+    "@radix-ui/react-dialog": "^1.0.5",
+    "@radix-ui/react-slot": "^1.2.4",
+    "@tanstack/react-query": "^5.0.0",
+    "class-variance-authority": "^0.7.0",
+    "clsx": "^2.1.0",
+    "dompurify": "^3.0.8",
+    "electron-updater": "^6.8.3",
+    "framer-motion": "^11.0.0",
+    "jspdf": "^4.2.0",
+    "jspdf-autotable": "^5.0.7",
+    "lucide-react": "^0.300.0",
+    "next": "14.2.15",
+    "react": "^18",
+    "react-dom": "^18",
+    "tailwind-merge": "^2.2.0",
+    "xlsx": "^0.18.5",
+    "zustand": "^4.5.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.57.0",
+    "@types/dompurify": "^3.0.5",
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "autoprefixer": "^10.0.1",
+    "concurrently": "^9.2.1",
+    "cross-env": "^10.1.0",
+    "electron": "^40.6.1",
+    "electron-builder": "^26.0.12",
+    "eslint": "^8",
+    "eslint-config-next": "14.2.15",
+    "postcss": "^8",
+    "tailwindcss": "^3.3.0",
+    "typescript": "^5",
+    "wait-on": "^9.0.3"
+  },
+  "build": {
+    "npmRebuild": false,
+    "appId": "com.naberal.kis-estimator",
+    "productName": "NABERAL KIS Estimator",
+    "copyright": "Copyright © 2025 NABERAL",
+    "publish": {
+      "provider": "github",
+      "owner": "kanno321-create",
+      "repo": "NABERAL_PROJECT"
+    },
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "electron/**/*",
+      "out/**/*",
+      "public/**/*",
+      "node_modules/electron-updater/**/*",
+      "node_modules/builder-util-runtime/**/*",
+      "node_modules/lazy-val/**/*",
+      "node_modules/semver/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "../src",
+        "to": "backend",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "${productName}-${version}-Setup.${ext}",
+      "signAndEditExecutable": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": true,
+      "allowToChangeInstallationDirectory": true,
+      "allowElevation": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "NABERAL KIS",
+      "installerLanguages": [
+        "ko-KR",
+        "en-US"
+      ],
+      "language": "1042"
+    },
+    "mac": {
+      "target": [
+        "dmg"
+      ],
+      "category": "public.app-category.business"
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "Office"
+    }
+  }
+}

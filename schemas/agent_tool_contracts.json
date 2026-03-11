@@ -1,0 +1,187 @@
+// filename: schemas/agent_tool_contracts.json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Naruu Agent Tool Contracts",
+  "type": "object",
+  "properties": {
+    "getIdea": {
+      "type": "object",
+      "properties": {
+        "inputs": {
+          "type": "object",
+          "properties": {
+            "language": { "type": "string", "enum": ["ko","ja"], "default": "ko" },
+            "min_score": { "type": "number", "default": 500 },
+            "status": { "type": "string", "enum": ["new","any"], "default": "new" }
+          },
+          "required": []
+        },
+        "outputs": {
+          "type": "object",
+          "properties": {
+            "story_id": { "type": "string" },
+            "title": { "type": "string" },
+            "summary": { "type": "string" },
+            "source_link": { "type": "string" },
+            "popularity": { "type": "number" }
+          },
+          "required": ["story_id","title","summary"]
+        }
+      },
+      "required": ["inputs","outputs"]
+    },
+    "writeScript": {
+      "type": "object",
+      "properties": {
+        "inputs": {
+          "type": "object",
+          "properties": {
+            "summary": { "type": "string" },
+            "duration_sec": { "type": "integer", "default": 60 },
+            "tone": { "type": "string", "enum": ["housewife_humor","intl_marriage_empathy"], "default": "housewife_humor" },
+            "cta": { "type": "string", "default": "대구에서 Naruu와 함께" },
+            "language": { "type": "string", "enum": ["ko","ja"], "default": "ko" }
+          },
+          "required": ["summary"]
+        },
+        "outputs": {
+          "type": "object",
+          "properties": {
+            "script_text": { "type": "string" },
+            "title_proposal": { "type": "string" },
+            "hashtags": { "type": "array", "items": { "type": "string" } }
+          },
+          "required": ["script_text"]
+        }
+      },
+      "required": ["inputs","outputs"]
+    },
+    "makeAudio": {
+      "type": "object",
+      "properties": {
+        "inputs": {
+          "type": "object",
+          "properties": {
+            "script_text": { "type": "string" },
+            "voice_lang": { "type": "string", "enum": ["ko-KR","ja-JP"], "default": "ko-KR" },
+            "voice_name": { "type": "string", "default": "ko-KR-Wavenet-A" },
+            "speed": { "type": "number", "default": 1.0 }
+          },
+          "required": ["script_text"]
+        },
+        "outputs": {
+          "type": "object",
+          "properties": {
+            "audio_file_url": { "type": "string" },
+            "audio_duration_sec": { "type": "number" }
+          },
+          "required": ["audio_file_url"]
+        }
+      },
+      "required": ["inputs","outputs"]
+    },
+    "makeImage": {
+      "type": "object",
+      "properties": {
+        "inputs": {
+          "type": "object",
+          "properties": {
+            "prompt": { "type": "string" },
+            "orientation": { "type": "string", "enum": ["portrait","square"], "default": "portrait" }
+          },
+          "required": ["prompt"]
+        },
+        "outputs": {
+          "type": "object",
+          "properties": {
+            "image_url": { "type": "string" }
+          },
+          "required": ["image_url"]
+        }
+      },
+      "required": ["inputs","outputs"]
+    },
+    "assembleVideo": {
+      "type": "object",
+      "properties": {
+        "inputs": {
+          "type": "object",
+          "properties": {
+            "image_url": { "type": "string" },
+            "audio_url": { "type": "string" },
+            "fps": { "type": "integer", "default": 30 },
+            "width": { "type": "integer", "default": 1080 },
+            "height": { "type": "integer", "default": 1920 },
+            "duration_cap_sec": { "type": "integer", "default": 60 },
+            "codec": { "type": "string", "default": "H264_AAC" }
+          },
+          "required": ["image_url","audio_url"]
+        },
+        "outputs": {
+          "type": "object",
+          "properties": {
+            "video_file_url": { "type": "string" },
+            "video_duration_sec": { "type": "number" }
+          },
+          "required": ["video_file_url"]
+        }
+      },
+      "required": ["inputs","outputs"]
+    },
+    "uploadYouTube": {
+      "type": "object",
+      "properties": {
+        "inputs": {
+          "type": "object",
+          "properties": {
+            "video_file_url": { "type": "string" },
+            "title": { "type": "string" },
+            "description": { "type": "string" },
+            "tags": { "type": "array", "items": { "type": "string" } },
+            "privacy_status": { "type": "string", "enum": ["private","unlisted","public"], "default": "private" },
+            "is_short": { "type": "boolean", "default": true }
+          },
+          "required": ["video_file_url","title"]
+        },
+        "outputs": {
+          "type": "object",
+          "properties": {
+            "youtube_video_id": { "type": "string" },
+            "youtube_watch_url": { "type": "string" }
+          },
+          "required": ["youtube_video_id","youtube_watch_url"]
+        }
+      },
+      "required": ["inputs","outputs"]
+    },
+    "makeBrochurePage": {
+      "type": "object",
+      "properties": {
+        "inputs": {
+          "type": "object",
+          "properties": {
+            "place_id": { "type": "string" },
+            "name": { "type": "string" },
+            "category": { "type": "string" },
+            "short_point": { "type": "string" },
+            "celebrity_or_drama": { "type": "string" },
+            "address": { "type": "string" },
+            "open_hours": { "type": "string" },
+            "photo_url": { "type": "string" },
+            "language": { "type": "string", "enum": ["ko","ja"], "default": "ja" }
+          },
+          "required": ["place_id","name","short_point"]
+        },
+        "outputs": {
+          "type": "object",
+          "properties": {
+            "copy_text": { "type": "string" },
+            "final_photo_url": { "type": "string" }
+          },
+          "required": ["copy_text"]
+        }
+      },
+      "required": ["inputs","outputs"]
+    }
+  }
+}

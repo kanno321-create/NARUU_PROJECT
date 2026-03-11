@@ -1,0 +1,108 @@
+# Package Guards CI Integration
+# Add this step to .github/workflows/kis-ci.yml after coverage verification
+
+# ========================================
+# GATE 4D: Package-Level Coverage Guards
+# ========================================
+gate-4d-package-guards:
+  name: "Gate 4D: Package Coverage Guards"
+  runs-on: ubuntu-latest
+  needs: gate-4c-tests
+  timeout-minutes: 5
+
+  steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Download coverage artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: coverage-reports
+        path: .
+
+    - name: Install bc for calculations
+      run: sudo apt-get update && sudo apt-get install -y bc libxml2-utils
+
+    - name: Check package-level coverage guards
+      run: |
+        chmod +x scripts/check_package_coverage.sh
+        bash scripts/check_package_coverage.sh coverage.xml
+
+    - name: Comment on PR with package coverage
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          const coverage = fs.readFileSync('.package_coverage_report.txt', 'utf8');
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: '## 📦 Package Coverage Report\n\n```\n' + coverage + '\n```'
+          });
+
+# ========================================
+# GATE 4E: Ratchet Check (Optional)
+# ========================================
+gate-4e-ratchet:
+  name: "Gate 4E: Ratchet Check (3×≥72% → 75%)"
+  runs-on: ubuntu-latest
+  needs: gate-4d-package-guards
+  timeout-minutes: 5
+  continue-on-error: true  # Don't fail CI if ratchet not triggered
+
+  steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Fetch all history for ratchet tracking
+
+    - name: Download coverage artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: coverage-reports
+        path: .
+
+    - name: Install bc for calculations
+      run: sudo apt-get update && sudo apt-get install -y bc
+
+    - name: Restore coverage history
+      uses: actions/cache@v4
+      with:
+        path: .coverage_history.txt
+        key: coverage-history-${{ github.ref }}
+        restore-keys: |
+          coverage-history-
+
+    - name: Check ratchet condition
+      id: ratchet
+      run: |
+        chmod +x scripts/check_ratchet.sh
+        bash scripts/check_ratchet.sh coverage.xml || true
+
+    - name: Save coverage history
+      uses: actions/cache@v4
+      with:
+        path: .coverage_history.txt
+        key: coverage-history-${{ github.ref }}-${{ github.run_number }}
+
+    - name: Create ratchet PR if triggered
+      if: env.RATCHET_TRIGGERED == 'true'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const newGate = process.env.NEW_GATE;
+          github.rest.issues.create({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            title: `🚀 Auto-Ratchet: Increase coverage gate to ${newGate}%`,
+            body: `## Ratchet Triggered\n\n` +
+                  `3 consecutive CI runs achieved ≥72% coverage.\n\n` +
+                  `**Action Required**: Update coverage gate from 70% to ${newGate}%\n\n` +
+                  `Files to update:\n` +
+                  `- .github/workflows/kis-ci.yml\n` +
+                  `- docs/COVERAGE_POLICY.md\n\n` +
+                  `See \`scripts/check_ratchet.sh\` for details.`,
+            labels: ['enhancement', 'coverage', 'auto-ratchet']
+          });

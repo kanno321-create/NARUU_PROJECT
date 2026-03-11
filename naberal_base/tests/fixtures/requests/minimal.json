@@ -1,0 +1,45 @@
+{
+  "customer": {
+    "name": "테스트고객사",
+    "project_name": "미니멀 테스트 프로젝트",
+    "site_address": null
+  },
+  "panels": [
+    {
+      "panel_id": "PANEL-1",
+      "panel_name": "분전반",
+      "breakers": [
+        {
+          "id": "MB-01",
+          "model": "SBE-103",
+          "poles": 3,
+          "current_a": 100,
+          "frame_af": 100,
+          "is_elb": false,
+          "is_main": true
+        },
+        {
+          "id": "BB-01",
+          "model": "SES-53",
+          "poles": 3,
+          "current_a": 20,
+          "frame_af": 50,
+          "is_elb": true,
+          "is_main": false
+        },
+        {
+          "id": "BB-02",
+          "model": "ABN-53",
+          "poles": 3,
+          "current_a": 30,
+          "frame_af": 50,
+          "is_elb": false,
+          "is_main": false
+        }
+      ],
+      "accessories": []
+    }
+  ],
+  "enclosure_type": "옥내노출",
+  "voltage_system": "3상4선"
+}

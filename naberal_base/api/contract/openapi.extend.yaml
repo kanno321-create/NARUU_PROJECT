@@ -1,0 +1,545 @@
+openapi: 3.1.0
+info:
+  title: KIS Estimator API - Phase X Quote Lifecycle Extension
+  description: Quote lifecycle endpoints with SSOT-based approval workflow
+  version: 1.0.0-phase-x
+
+paths:
+  /v1/quotes:
+    post:
+      summary: Create Quote
+      description: |
+        Create a new quote with SSOT-based calculation
+
+        SSOT Rules Applied:
+        - UOM validation (src/kis_estimator_core/core/ssot/data/uom.json)
+        - Discount calculation (src/kis_estimator_core/core/ssot/data/discount_rules.json)
+        - Rounding (src/kis_estimator_core/core/ssot/data/rounding.json): KRW, precision=0, HALF_UP
+        - VAT 10% applied
+        - Approval threshold check (≥50,000,000 KRW → approval_required=true)
+
+        Returns:
+          - quote_id (UUID)
+          - totals (subtotal, discount, vat, total)
+          - approval_required (boolean)
+          - evidence_hash (SHA256 of input data)
+
+        Contract-First / Zero-Mock / Evidence-Gated
+      operationId: create_quote
+      tags:
+        - quotes
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - items
+                - client
+              properties:
+                items:
+                  type: array
+                  description: Quote line items
+                  items:
+                    type: object
+                    required:
+                      - sku
+                      - quantity
+                      - unit_price
+                      - uom
+                    properties:
+                      sku:
+                        type: string
+                        example: "SBE-104-75A"
+                      quantity:
+                        type: integer
+                        minimum: 1
+                        example: 10
+                      unit_price:
+                        type: number
+                        minimum: 0
+                        example: 12500
+                      uom:
+                        type: string
+                        description: Unit of measure (validated against SSOT uom.json)
+                        enum: ["EA", "SET", "M", "KG", "PCS", "BOX", "ROLL"]
+                        example: "EA"
+                      discount_tier:
+                        type: string
+                        description: Discount tier (optional, from SSOT discount_rules.json)
+                        enum: ["A", "B", "VIP", "VOLUME", "SEASONAL"]
+                        example: "A"
+                client:
+                  type: string
+                  description: Client name or organization
+                  example: "삼성전자"
+                terms_ref:
+                  type: string
+                  description: Payment terms reference (optional)
+                  example: "NET30"
+      responses:
+        '201':
+          description: Quote created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - quote_id
+                  - totals
+                  - approval_required
+                  - evidence_hash
+                  - created_at
+                properties:
+                  quote_id:
+                    type: string
+                    format: uuid
+                    example: "550e8400-e29b-41d4-a716-446655440000"
+                  totals:
+                    type: object
+                    required:
+                      - subtotal
+                      - discount
+                      - vat
+                      - total
+                    properties:
+                      subtotal:
+                        type: number
+                        example: 125000
+                      discount:
+                        type: number
+                        example: 6250
+                      vat:
+                        type: number
+                        example: 11875
+                      total:
+                        type: number
+                        example: 130625
+                      currency:
+                        type: string
+                        example: "KRW"
+                  approval_required:
+                    type: boolean
+                    description: True if total ≥ approval_threshold (SSOT rule)
+                    example: false
+                  evidence_hash:
+                    type: string
+                    description: SHA256 hash of input items (integrity verification)
+                    example: "a1b2c3d4e5f6..."
+                  created_at:
+                    type: string
+                    format: date-time
+                    example: "2025-10-27T13:30:00Z"
+        '422':
+          description: Validation error (invalid UOM, discount_tier, etc)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error (Fail-Fast)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /v1/quotes/{id}:
+    get:
+      summary: Get Quote
+      description: |
+        Retrieve quote by ID
+
+        Returns full quote details including:
+        - Items, client, terms_ref
+        - Calculated totals
+        - Status (DRAFT, APPROVED)
+        - Approval metadata (if approved)
+        - Evidence hash
+
+        Contract-First / Zero-Mock
+      operationId: get_quote
+      tags:
+        - quotes
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Quote UUID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Quote found
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - quote_id
+                  - items
+                  - client
+                  - totals
+                  - status
+                  - evidence_hash
+                  - created_at
+                properties:
+                  quote_id:
+                    type: string
+                    format: uuid
+                  items:
+                    type: array
+                    items:
+                      type: object
+                  client:
+                    type: string
+                  terms_ref:
+                    type: string
+                  totals:
+                    type: object
+                  status:
+                    type: string
+                    enum: ["DRAFT", "APPROVED"]
+                  evidence_hash:
+                    type: string
+                  created_at:
+                    type: string
+                    format: date-time
+                  updated_at:
+                    type: string
+                    format: date-time
+                  approved_at:
+                    type: string
+                    format: date-time
+                  approved_by:
+                    type: string
+        '404':
+          description: Quote not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error (Fail-Fast)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /v1/quotes/{id}/approve:
+    post:
+      summary: Approve Quote
+      description: |
+        Approve quote (internal approval workflow)
+
+        SSOT Rules:
+        - Approval threshold check (from discount_rules.json)
+        - Status transition: DRAFT → APPROVED
+        - Records: approved_at (TIMESTAMPTZ UTC), approved_by (actor)
+
+        Evidence:
+        - Approval audit log entry created
+        - Hash verification performed
+
+        Contract-First / Evidence-Gated
+      operationId: approve_quote
+      tags:
+        - quotes
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Quote UUID
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - actor
+              properties:
+                actor:
+                  type: string
+                  description: Approver identifier (email or username)
+                  example: "김대리@naberal.com"
+                comment:
+                  type: string
+                  description: Optional approval comment
+                  example: "Approved for Q4 project"
+      responses:
+        '200':
+          description: Quote approved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - quote_id
+                  - status
+                  - approved_at
+                  - approved_by
+                properties:
+                  quote_id:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+                    example: "APPROVED"
+                  approved_at:
+                    type: string
+                    format: date-time
+                    example: "2025-10-27T14:00:00Z"
+                  approved_by:
+                    type: string
+                    example: "김대리@naberal.com"
+                  evidence_entry:
+                    type: string
+                    description: Evidence log entry ID
+                    example: "audit-20251027T140000-abc123"
+        '404':
+          description: Quote not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Quote already approved or invalid state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error (Fail-Fast)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /v1/quotes/{id}/pdf:
+    post:
+      summary: Generate Quote PDF
+      description: |
+        Generate PDF document for quote (Phase XII: Enforced validation)
+
+        Uses estimate_formatter pipeline with PDF Auditor:
+        - Excel template → PDF conversion
+        - Footer includes: evidence_hash (SHA256), quote_id, generated_at
+        - File stored at: out/pdf/{quote_id}.pdf (local dev)
+        - S3 archiving on approval (graceful degradation)
+
+        Phase XII: PDF policy enforcement (422 on violation):
+        - Page size: A4 (210×297mm ±0.5mm)
+        - Margins: ≥10mm all sides
+        - Font: Korean fonts (MalgunGothic/NanumGothic/NanumMyeongjo)
+        - Footer: Evidence Footer required
+
+        Contract-First / Evidence-Gated
+      operationId: generate_quote_pdf
+      tags:
+        - quotes
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Quote UUID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: PDF generated successfully
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+                example: 'attachment; filename="quote-550e8400-e29b-41d4-a716-446655440000.pdf"'
+            X-Evidence-Hash:
+              schema:
+                type: string
+                description: SHA256 hash of quote data (for verification)
+            X-Generated-At:
+              schema:
+                type: string
+                format: date-time
+        '403':
+          description: Forbidden - Approval required (RBAC)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Quote not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: PDF policy violation (Phase XII)
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ErrorResponse'
+                  - type: object
+                    properties:
+                      code:
+                        example: "E_PDF_POLICY"
+                      message:
+                        example: "PDF policy violation: Page size not A4; Margins < 10mm"
+                      hint:
+                        example: "Check page size (A4), margins (≥10mm), Korean fonts, Evidence Footer"
+                      meta:
+                        type: object
+                        properties:
+                          violations:
+                            type: array
+                            items:
+                              type: string
+                            example: ["Page size not A4", "Margins < 10mm"]
+        '500':
+          description: Internal server error (Fail-Fast)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /v1/quotes/{id}/pdf/url:
+    get:
+      summary: Get Pre-signed PDF URL (Phase XII)
+      description: |
+        Get pre-signed S3 URL for approved quote PDF
+
+        Requirements:
+        - Quote must be APPROVED (403 if not approved)
+        - Returns pre-signed URL with 15-minute expiration (SSOT: S3_URL_TTL_SECONDS)
+        - Graceful degradation: Returns local:// URL if S3 unavailable
+
+        Headers:
+        - X-Storage-Mode: "s3" or "local" (for monitoring)
+
+        RBAC Enforcement:
+        - Role: APPROVER or ADMIN required
+        - Unapproved quote access → 403
+
+        Contract-First / Evidence-Gated
+      operationId: get_quote_pdf_url
+      tags:
+        - quotes
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Quote UUID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Pre-signed URL generated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - url
+                  - expires_at
+                  - approved
+                  - evidence_hash
+                  - storage_mode
+                properties:
+                  url:
+                    type: string
+                    description: Pre-signed GET URL (S3) or local:// fallback
+                    example: "https://bucket.s3.region.amazonaws.com/quotes/550e8400.../quote-550e8400...pdf?X-Amz-Signature=..."
+                  expires_at:
+                    type: string
+                    format: date-time
+                    description: URL expiration timestamp (ISO8601) or "never" for local mode
+                    example: "2025-10-31T13:15:00Z"
+                  approved:
+                    type: boolean
+                    description: Quote approval status (always true for successful response)
+                    example: true
+                  evidence_hash:
+                    type: string
+                    description: SHA256 hash of quote data
+                    example: "a1b2c3d4e5f6..."
+                  storage_mode:
+                    type: string
+                    enum: ["s3", "local"]
+                    description: Storage mode (s3 or local fallback)
+                    example: "s3"
+          headers:
+            X-Storage-Mode:
+              schema:
+                type: string
+                enum: ["s3", "local"]
+                description: Actual storage mode used
+        '403':
+          description: Forbidden - Quote not approved or insufficient role
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ErrorResponse'
+                  - type: object
+                    properties:
+                      code:
+                        example: "E_VALIDATION"
+                      message:
+                        example: "Quote 550e8400... not approved. Approval required for PDF URL access."
+                      hint:
+                        example: "Approve quote first: POST /v1/quotes/{id}/approve"
+          headers:
+            X-Policy-Hint:
+              schema:
+                type: string
+                example: "Approval required"
+        '404':
+          description: Quote not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error (Fail-Fast)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    ErrorResponse:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          example: "E_VALIDATION"
+        message:
+          type: string
+          example: "Invalid UOM: ABC (valid: EA, SET, M, KG, PCS, BOX, ROLL)"
+        hint:
+          type: string
+          example: "Check SSOT uom.json for valid units"
+        traceId:
+          type: string
+          example: "trace-abc123"
+        meta:
+          type: object
+          properties:
+            dedupKey:
+              type: string

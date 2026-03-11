@@ -1,0 +1,365 @@
+{
+  "meta": {
+    "name": "breaker_knowledge_consolidated",
+    "version": "1.0.0",
+    "created_at_utc+09": "2025-11-18T00:00:00+09:00",
+    "description": "차단기 지식 통합: 모델명 파싱, 선택 가이드, 치수, 가격 카탈로그",
+    "sources": [
+      "차단기설명.txt",
+      "ai_estimation_core.json (breakers section)",
+      "중요ai단가표의_2.0V.csv"
+    ],
+    "locale": "ko-KR",
+    "units": {
+      "length": "mm",
+      "current": "A",
+      "price": "KRW (원)",
+      "capacity": "kA"
+    }
+  },
+
+  "brands": [
+    {
+      "id": "SANGDO",
+      "name": "상도차단기",
+      "symbol": "S",
+      "market_share": "high",
+      "notes": "국내 전기 패널 시장 주요 브랜드"
+    },
+    {
+      "id": "LS",
+      "name": "LS차단기",
+      "symbol": "A|E",
+      "market_share": "high",
+      "notes": "LS일렉트릭, 국내 전기 패널 시장 주요 브랜드"
+    }
+  ],
+
+  "model_parsing_rules": {
+    "SANGDO": {
+      "structure": "S-[B|E|C]-[E|S]-[프레임]-[극수]",
+      "fields": {
+        "brand_symbol": {
+          "value": "S",
+          "meaning": "SANGDO"
+        },
+        "family": {
+          "B": "배선용차단기 (MCCB)",
+          "E": "누전차단기 (ELB)",
+          "C": "컴팩트형 (Compact)"
+        },
+        "type_code": {
+          "E": "경제형 (Economy)",
+          "S": "표준형 (Standard)"
+        },
+        "frame_digit_map": {
+          "3": 30,
+          "5": 50,
+          "10": 100,
+          "20": 225,
+          "40": 400,
+          "60": 600,
+          "80": 800
+        },
+        "poles_digit_map": {
+          "2": 2,
+          "3": 3,
+          "4": 4
+        }
+      },
+      "examples": [
+        {
+          "model": "SBS-54",
+          "parsing": "S(SANGDO) - B(배선용) - S(표준형) - 5(50AF) - 4(4극)",
+          "result": "상도 배선용차단기 표준형 50AF 4극"
+        },
+        {
+          "model": "SEE-104",
+          "parsing": "S(SANGDO) - E(누전) - E(경제형) - 10(100AF) - 4(4극)",
+          "result": "상도 누전차단기 경제형 100AF 4극"
+        },
+        {
+          "model": "SBC-52",
+          "parsing": "S(SANGDO) - B(배선용) - C(컴팩트) - 5(50AF) - 2(2극)",
+          "result": "상도 배선용차단기 컴팩트형 50AF 2극"
+        }
+      ]
+    },
+    "LS": {
+      "structure": "A|E-[B]-[N|S]-[프레임]-[극수] (+ FB suffix for compact)",
+      "fields": {
+        "prefix": {
+          "A": "배선용차단기 (MCCB)",
+          "E": "누전차단기 (ELB)"
+        },
+        "middle_B": {
+          "value": "B",
+          "meaning": "분전반용 (MCCB/ELB 공통)"
+        },
+        "type_code": {
+          "N": "경제형 (Economy)",
+          "S": "표준형 (Standard)"
+        },
+        "frame_digit_map": {
+          "3": 30,
+          "5": 50,
+          "6": 60,
+          "10": 100,
+          "20": 225,
+          "40": 400,
+          "60": 600,
+          "80": 800
+        },
+        "poles_digit_map": {
+          "2": 2,
+          "3": 3,
+          "4": 4
+        },
+        "suffix": {
+          "FB": "FB타입 (Compact)"
+        }
+      },
+      "examples": [
+        {
+          "model": "ABN-54",
+          "parsing": "A(배선용) - B(분전반용) - N(경제형) - 5(50AF) - 4(4극)",
+          "result": "LS 배선용차단기 경제형 50AF 4극"
+        },
+        {
+          "model": "EBS-203",
+          "parsing": "E(누전) - B(분전반용) - S(표준형) - 20(225AF) - 3(3극)",
+          "result": "LS 누전차단기 표준형 225AF 3극"
+        },
+        {
+          "model": "ABS52FB",
+          "parsing": "A(배선용) - B(분전반용) - S(표준형) - 5(50AF) - 2(2극) - FB(컴팩트)",
+          "result": "LS 배선용차단기 표준형 50AF 2극 FB타입"
+        }
+      ]
+    }
+  },
+
+  "selection_guide": {
+    "priority_order": [
+      "1. 기본 원칙: 특별한 요청이 없으면 경제형 사용",
+      "2. 경제형이 없는 경우에만 표준형 사용",
+      "3. 경제형이 26% 저렴 (예: SBE-102 경제형 12,500원 vs SBS-102 표준형 15,800원)",
+      "4. 경제형 차단용량: 37kA, 표준형 차단용량: 50kA"
+    ],
+    "rules": [
+      {
+        "rule_id": "RULE_SMALL_ELB_2P_20_30A",
+        "condition": "누전 2P 20A 또는 30A",
+        "action": "소형 차단기 사용",
+        "models": [
+          {
+            "brand": "SANGDO",
+            "model": "SIE-32",
+            "ampere": [20, 30],
+            "capacity_kA": 2.5,
+            "size_mm": [33, 70, 42]
+          },
+          {
+            "brand": "LS",
+            "model": "32GRHS",
+            "ampere": [15, 20, 30],
+            "capacity_kA": 2.5,
+            "size_mm": [33, 70, 42]
+          }
+        ],
+        "notes": "고감도 버전도 존재: SIE-32고감도, 32GRHS고감도 (화장실/물 많은 공간 사용)"
+      },
+      {
+        "rule_id": "RULE_SMALL_MCCB_2P_20_30A",
+        "condition": "배선용 2P 20A 또는 30A",
+        "action": "소형 차단기 사용",
+        "models": [
+          {
+            "brand": "SANGDO",
+            "model": "SIB-32",
+            "ampere": [20, 30],
+            "capacity_kA": 2.5,
+            "size_mm": [33, 70, 42]
+          },
+          {
+            "brand": "LS",
+            "model": "BS-32",
+            "ampere": [15, 20, 30],
+            "capacity_kA": 2.5,
+            "size_mm": [33, 70, 42]
+          }
+        ]
+      },
+      {
+        "rule_id": "RULE_COMPACT_FB_2P_20_30A_50AF",
+        "condition": "2P 20A 또는 30A인데 프레임 50AF 요구",
+        "action": "컴팩트/FB 타입 사용",
+        "models": [
+          {
+            "brand": "SANGDO",
+            "model": "SBC-52",
+            "type": "컴팩트",
+            "ampere": [20, 30, 40, 50],
+            "frame_AF": 50,
+            "size_mm": [50, 96, 60]
+          },
+          {
+            "brand": "LS",
+            "model": "ABS52FB",
+            "type": "FB타입",
+            "ampere": [20, 30, 40, 50],
+            "frame_AF": 50,
+            "size_mm": [50, 96, 60]
+          }
+        ],
+        "notes": "고객 견적요청서에 명시되거나 구두로 전달됨"
+      },
+      {
+        "rule_id": "RULE_4P_50AF_NO_ECONOMY",
+        "condition": "4P 50AF (20~50A)",
+        "action": "경제형에 없으므로 표준형 사용",
+        "reason": "경제형 4P 50AF 제품이 존재하지 않음",
+        "example": "고객이 LS차단기 선택, 분기차단기 ELB 4P 30A → EBN-54 없음 → EBS-54 사용 (프레임 동일하므로 마주보기 가능)"
+      }
+    ],
+    "special_annotations": {
+      "housing_use": {
+        "trigger": "견적요청서에 '주택용차단기' 명시",
+        "action": "견적서 작성 시 모델명 옆에 '주택용' 표기",
+        "example": "SBS-54 주택용"
+      },
+      "spd_use": {
+        "trigger": "SPD가 사용되어 추가된 MCCB",
+        "default_spec": "MCCB 4P 40A",
+        "variations": "고객 요청에 따라 30A, 50A로 변경 가능",
+        "action": "견적서 작성 시 모델명 옆에 'SPD용' 표기",
+        "example": "ABN-54 40A SPD용"
+      },
+      "high_sensitivity": {
+        "trigger": "도면에서 다른 차단기와 다른 사각형칸에 배치 OR CAD도면에 명시",
+        "models": ["SIE-32고감도", "32GRHS고감도"],
+        "description": "감도가 높아 아주 미세한 누전에도 차단됨",
+        "usage": "화장실 또는 물이 많은 공간"
+      }
+    }
+  },
+
+  "dimensions": {
+    "category": "size_mm (W×H×D)",
+    "notes": [
+      "마주보기 배치: 좌우 마주보기, 같은 프레임끼리 행(Row) 단위 Pairing",
+      "소형 2P 특수 규칙: 2P 15~30A 소형은 마주보기 40mm",
+      "정면 기준 극수 배열: R-S-T-N (4P의 경우 N상은 최우측)"
+    ],
+    "common_sizes": {
+      "small": {
+        "models": ["SIE-32", "SIB-32", "32GRHS", "BS-32"],
+        "size_mm": [33, 70, 42],
+        "description": "소형차단기 (2P 20A/30A 전용)"
+      },
+      "fb_compact": {
+        "2P": [50, 96, 60],
+        "3P": [75, 96, 60],
+        "description": "FB타입/컴팩트형"
+      }
+    },
+    "by_frame": {
+      "50AF": {
+        "2P": [50, 130, 60],
+        "3P": [75, 130, 60],
+        "4P": [100, 130, 60]
+      },
+      "100AF_economy": {
+        "2P": [50, 130, 60],
+        "3P": [75, 130, 60],
+        "4P": [100, 130, 60]
+      },
+      "100_to_125AF_standard": {
+        "2P": [60, 155, 60],
+        "3P": [90, 155, 60],
+        "4P": [120, 155, 60]
+      },
+      "200_to_250AF": {
+        "2P": [70, 165, 60],
+        "3P": [105, 165, 60],
+        "4P": [140, 165, 60]
+      },
+      "400AF": {
+        "3P": [140, 257, 109],
+        "4P": [187, 257, 109],
+        "note": "400AF 이상 메인차단기는 차단기지지대 필수 (크기가 커서 지지대 위 설치 필요)"
+      },
+      "600AF": {
+        "3P": [210, 280, 109],
+        "4P": [280, 280, 109]
+      },
+      "800AF": {
+        "3P": [210, 280, 109],
+        "4P": [280, 280, 109]
+      }
+    }
+  },
+
+  "catalog": {
+    "note": "ai_estimation_core.json에서 추출한 전체 차단기 카탈로그 (200+ 모델)",
+    "mccb": "배선용차단기 섹션은 ai_estimation_core.json의 catalog.breakers.items에서 category='MCCB' 필터링",
+    "elb": "누전차단기 섹션은 ai_estimation_core.json의 catalog.breakers.items에서 category='ELB' 필터링",
+    "data_source_reference": "C:\\Users\\PC\\Desktop\\절대코어파일\\core\\rules\\ai_estimation_core.json",
+    "total_models": "200+",
+    "price_reference": "C:\\Users\\PC\\Desktop\\절대코어파일\\중요ai단가표의_2.0V.csv (1,048,407 lines)"
+  },
+
+  "layout_rules": {
+    "facing_arrangement": {
+      "description": "좌우 마주보기 입력(1차 Facing), 같은 프레임끼리 행(Row) 단위로 Pairing",
+      "input_side": "1차 단자 (좌우 마주보기, 센터 분기부스바 연결)",
+      "output_side": "2차 단자 (모두 외측: 좌측차단기→좌외측, 우측차단기→우외측)",
+      "sorting_priority": "극수(Poles) > 프레임(Frame) > 암페어(Ampere) 순"
+    },
+    "branch_bus_connection": {
+      "2P": "R,S 각 상별 1줄 공통 분기부스바로 좌↔우 입력 연결",
+      "3P": "R,S,T 각 상별 1줄 공통 분기부스바로 좌↔우 입력 연결",
+      "4P": {
+        "RST": "R,S,T는 각 상별 1줄 공통 분기부스바로 좌↔우 입력 연결",
+        "N_row_aware": {
+          "paired_N": "마주보는 N상(중간 행): 공통 1줄 분기부스바로 좌↔우 입력 연결 + MAIN.N 볼트 결합",
+          "solo_N": "단독 N상(맨 위/아래): 측별(좌N 또는 우N) 1줄씩 생성, MAIN.N 볼트 결합, 좌↔우 횡연결 절대 금지",
+          "safety_critical": "N상 row-aware 처리는 전기 안전 규정상 필수. 잘못 연결 시 감전 위험"
+        }
+      }
+    }
+  },
+
+  "spec_presentation": {
+    "order": "POLE → 프레임AF → 암페어AT → 정격차단전류kA",
+    "example": {
+      "model": "SBE-104",
+      "ampere": "75A",
+      "spec": "4P 100AF 75AT 14kA",
+      "explanation": "4극(4P) + 프레임 100AF + 정격 75AT + 정격차단전류 14kA"
+    }
+  },
+
+  "provenance": {
+    "consolidated_from": [
+      "차단기설명.txt (v1.00, 2025-08-25)",
+      "ai_estimation_core.json (v1.2.0, 2025-09-10)",
+      "중요ai단가표의_2.0V.csv (1,048,407 lines)"
+    ],
+    "consolidation_date": "2025-11-18",
+    "author": "Narberal Gamma (NABERAL KIS Estimator AI)",
+    "review_status": "CEO approval required",
+    "version_history": [
+      {
+        "version": "1.0.0",
+        "date": "2025-11-18",
+        "changes": "Initial consolidated version"
+      },
+      {
+        "version": "1.1.0",
+        "date": "2024-12-02",
+        "changes": "CEO 지시 반영: ABN-204 250A 존재 확인, 메인차단기 MCCB 기본 규칙, 32GRHS 가격 정정 (10,300원)"
+      }
+    ]
+  }
+}

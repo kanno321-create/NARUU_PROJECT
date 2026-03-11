@@ -1,0 +1,203 @@
+{
+  "meta": {
+    "title": "차단기 선택 및 배치 규칙 (대표님 지식 통합)",
+    "version": "v1.0.0",
+    "created_at": "2025-12-02",
+    "source": "대표님 직접 교육 내용",
+    "mandatory": true,
+    "notes": [
+      "이 파일의 규칙은 견적 시 반드시 적용해야 함",
+      "대표님 승인 없이 수정 금지"
+    ]
+  },
+
+  "breaker_frame_defaults": {
+    "description": "2P 20A, 2P 30A 차단기는 고객 요청 없으면 30AF(최소 타입) 고정",
+    "rules": [
+      {
+        "condition": {
+          "poles": 2,
+          "current_a": [20, 30],
+          "customer_request": false
+        },
+        "apply": {
+          "frame_af": 30,
+          "note": "가장 작은 타입 강제 적용"
+        }
+      }
+    ],
+    "model_mapping": {
+      "30AF_2P": {
+        "sangdo": {
+          "ELB": "SIE-32",
+          "MCCB": "SIB-32"
+        },
+        "LS": {
+          "ELB": "32GRHS",
+          "MCCB": "BS-32"
+        }
+      }
+    },
+    "dimensions_mm": {
+      "30AF_2P": {
+        "W": 33,
+        "H": 70,
+        "D": 42
+      }
+    }
+  },
+
+  "breaker_layout_principles": {
+    "description": "분기 차단기 배치 원리 (핵심!)",
+    "orientation": {
+      "rule": "분기 차단기는 눕혀서(수평으로) 배치",
+      "reason": "1차 단자가 중앙 메인부스바를 향해야 함",
+      "detail": [
+        "차단기 W(폭) → 분전반 H(높이) 방향으로 누적",
+        "차단기 H(높이) → 분전반 W(폭) 방향으로 누적"
+      ]
+    },
+    "face_to_face": {
+      "rule": "좌우 2개씩 마주보기 배치",
+      "reason": "1차 단자가 서로 마주보게 하여 분기부스바로 연결",
+      "N_phase_position": {
+        "4P_left": "N상이 하단에 위치",
+        "4P_right": "N상이 상단에 위치"
+      }
+    },
+    "height_calculation": {
+      "formula": "rows = ceil(breaker_count / 2)",
+      "per_row_height": "breaker_W (폭 값)",
+      "example": {
+        "breakers": 12,
+        "frame_af": 50,
+        "poles": 4,
+        "breaker_W": 100,
+        "rows": 6,
+        "total_height": 600
+      }
+    }
+  },
+
+  "face_to_face_gap_rules": {
+    "description": "마주보기 배치 시 간격",
+    "small_2P_20_30A": {
+      "gap_mm": 40,
+      "note": "소형 2P 15~30A는 마주보기 40mm"
+    },
+    "standard": {
+      "gap_mm": 0,
+      "note": "표준 차단기는 추가 간격 없음 (부스바 공간 확보됨)"
+    }
+  },
+
+  "breaker_type_selection": {
+    "description": "차단기 타입 선택 우선순위",
+    "priority": [
+      {
+        "order": 1,
+        "type": "경제형",
+        "capacity_ka": 37,
+        "price": "저렴",
+        "note": "기본 사용 (특별 요청 없으면)"
+      },
+      {
+        "order": 2,
+        "type": "표준형",
+        "capacity_ka": 50,
+        "price": "고가 (약 26% 비쌈)",
+        "note": "경제형 부재 시 또는 고객 요청 시"
+      },
+      {
+        "order": 3,
+        "type": "소형",
+        "capacity_ka": 2.5,
+        "price": "최저가",
+        "note": "2P 20A/30A 전용"
+      }
+    ],
+    "exceptions": {
+      "4P_50AF": {
+        "rule": "경제형 없음 → 표준형 사용",
+        "current_range": "20~50A"
+      }
+    }
+  },
+
+  "enclosure_height_formula": {
+    "description": "외함 높이(H) 계산 공식",
+    "formula": "H = top_margin + main_W + gap + branches_height + bottom_margin + accessory_margin",
+    "components": {
+      "top_margin": "상단 여유 (메인 AF별 상이)",
+      "main_W": "메인 차단기 폭 (눕혔을 때)",
+      "gap": "메인-분기 간격 (15mm)",
+      "branches_height": "분기 차단기 총 높이 (rows × breaker_W)",
+      "bottom_margin": "하단 여유 (메인 AF별 상이)",
+      "accessory_margin": "부속자재 여유"
+    },
+    "key_insight": "분기차단기 W값이 분전반 H값을 결정 (눕혀서 배치)"
+  },
+
+  "validation_checklist": {
+    "before_estimate": [
+      "2P 20A/30A 차단기가 30AF로 설정되었는지 확인",
+      "분기 차단기 높이 계산에 W값(폭)이 사용되었는지 확인",
+      "마주보기 배치로 rows = ceil(count/2) 적용되었는지 확인",
+      "4P N상 위치 고려되었는지 확인 (좌측 하단, 우측 상단)",
+      "기성함 카탈로그에서 계산값 이상의 크기 선택되었는지 확인",
+      "절대 다운사이징 없는지 확인 (차단기 설치 불가 = 대형사고)"
+    ]
+  },
+
+  "enclosure_sizing_rules": {
+    "description": "외함 크기 선정 규칙 (가격경쟁력 핵심!)",
+    "mandatory": true,
+    "critical_warning": "다운사이징 절대 금지 - 차단기 설치 불가 시 대형사고 발생",
+    "rules": {
+      "standard_enclosure_priority": {
+        "description": "기성함(HDS) 우선 사용 - 가격경쟁력 확보",
+        "reason": "기성함이 주문제작함보다 저렴하여 가격경쟁력 매우 높음",
+        "action": "계산된 치수와 가장 가까운 기성함 선택"
+      },
+      "upsizing_allowed": {
+        "description": "1단계 업사이징 허용",
+        "example": "계산값 600×675 → 기성함 600×700 (허용)",
+        "example2": "계산값 600×700 재고없음 → 600×800 (1단계 업 허용)",
+        "max_upsize_step": 1,
+        "reason": "함이 조금 커지는 것은 괜찮음"
+      },
+      "downsizing_forbidden": {
+        "description": "다운사이징 절대 금지",
+        "severity": "CRITICAL",
+        "example": "계산값 600×700 → 600×600 (절대 금지!)",
+        "consequence": "차단기가 공간이 없어 설치 불가 → 대형사고",
+        "action": "다운사이징 시도 시 즉시 거부하고 업사이징 선택"
+      }
+    },
+    "standard_sizes_mm": {
+      "W": [500, 600, 700, 800, 900, 1000],
+      "H": [600, 700, 800, 900, 1000, 1200, 1300, 1400, 1500, 1600, 1800, 2000],
+      "D": [150, 200, 250, 300],
+      "note": "HDS 옥내노출 카탈로그 기준 - 1100은 W=700에서 없음 (1000→1200)"
+    },
+    "sizing_algorithm": {
+      "step1": "계산된 W, H, D 값 산출",
+      "step2": "카탈로그에서 계산값 이상인 가까운 기성함 사이즈 검색",
+      "step3": "해당 기성함 재고 확인",
+      "step4_if_stock": "재고 있으면 → 기성함 사용 (가격경쟁력 확보)",
+      "step4_if_no_stock": "재고 없으면 → H값 1단계 업 또는 W값 1단계 업으로 재고 있는 기성함 선택",
+      "step5": "절대로 다운사이징 금지 (차단기 설치 불가 = 대형사고)",
+      "key_point": "최대한 저렴한 기성함 선정 = 가격경쟁력 승리"
+    },
+    "stock_fallback_strategy": {
+      "description": "재고 없을 때 대체 전략",
+      "priority_order": [
+        "1순위: H값 1단계 업 (예: 700→800)",
+        "2순위: W값 1단계 업 (예: 600→700)",
+        "3순위: H+W 모두 1단계 업",
+        "최후: 주문제작 (가격 불리)"
+      ],
+      "goal": "기성함 사용으로 가격경쟁력 유지"
+    }
+  }
+}

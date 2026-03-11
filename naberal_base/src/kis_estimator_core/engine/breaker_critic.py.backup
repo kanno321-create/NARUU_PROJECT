@@ -1,0 +1,299 @@
+"""
+Stage 2.1: Breaker Critic - FIX-4 Pipeline
+배치 결과 검증 및 개선 권장사항 생성
+
+Quality Gates (실무 기준):
+- 상평형 ≤ 80.0% (고정 RST 순환 방식, 극단적 불균형만 위반)
+- 간섭 위반 = 0 (MANDATORY)
+- 열 위반 = 0 (MANDATORY)
+- 성능: < 200ms (목표), < 500ms (최대)
+"""
+
+from dataclasses import dataclass, field
+from typing import List, Dict, Optional
+import logging
+from pathlib import Path
+
+logger = logging.getLogger(__name__)
+
+
+# Critical thresholds - 실무 기준
+MAX_LIMITS = {
+    "phase_imbalance_pct": 80.0,  # 고정 RST 순환, 극단적 불균형(R=6,S=1,T=1) 위반
+    "clearances_violation": 0,  # SPEC: 0 (MANDATORY)
+    "thermal_violation": 0,  # SPEC: 0 (MANDATORY)
+    "row_heat_w": 650,  # 1줄당 최대 열 (Watts)
+    "panel_heat_w": 2500,  # 패널 전체 최대 열 (Watts)
+    "min_clearance_mm": 50,  # 최소 간격 (mm)
+}
+
+
+@dataclass
+class ViolationDetail:
+    """위반 사항 상세"""
+
+    type: str  # "phase_imbalance", "clearance", "thermal", "panel_thermal", "position"
+    severity: str  # "critical", "error", "warning"
+    message: str
+    cause: str
+    recommendation: str
+    value: Optional[float] = None
+    limit: Optional[float] = None
+    count: Optional[int] = None
+    position: Optional[str] = None
+    breaker_id: Optional[str] = None
+
+
+@dataclass
+class CriticResult:
+    """검증 결과 (Stage 2.1 출력)"""
+
+    passed: bool  # 모든 검증 통과 여부
+    score: int  # 점수 (0-100)
+    violations: List[str] = field(default_factory=list)  # 위반 메시지 목록
+    warnings: List[str] = field(default_factory=list)  # 경고 메시지 목록
+    violation_details: List[ViolationDetail] = field(
+        default_factory=list
+    )  # 상세 위반 사항
+    phase_imbalance_pct: float = 0.0
+    total_heat_w: float = 0.0
+    clearance_violations: int = 0
+    thermal_violations: int = 0
+    thresholds: Dict[str, float] = field(default_factory=lambda: MAX_LIMITS.copy())
+    metrics: Dict[str, any] = field(default_factory=dict)
+
+
+class BreakerCritic:
+    """
+    차단기 배치 검증 엔진 (Stage 2.1)
+
+    검증 항목:
+    1. 상평형 ≤ 80.0% (고정 RST 순환)
+    2. 간섭 위반 = 0
+    3. 열 위반 = 0
+    4. 패널 열 ≤ 2500W
+    5. 위치 경계 검증
+    """
+
+    def __init__(self):
+        self.max_limits = MAX_LIMITS.copy()
+
+    def critique(
+        self,
+        placements: List["PlacementResult"],
+        phase_imbalance_pct: float = 0.0,
+        total_heat_w: float = 0.0,
+        clearance_violations: int = 0,
+        thermal_violations: int = 0,
+    ) -> CriticResult:
+        """
+        배치 결과 검증 (객체 기반)
+
+        Args:
+            placements: 배치 결과 목록 (PlacementResult 리스트)
+            phase_imbalance_pct: 상평형 (%)
+            total_heat_w: 총 열 (Watts)
+            clearance_violations: 간섭 위반 수
+            thermal_violations: 열 위반 수
+
+        Returns:
+            CriticResult: 검증 결과
+
+        Raises:
+            ValueError: 입력이 비어있는 경우 (목업 금지 원칙)
+        """
+        if not placements:
+            raise ValueError(
+                "No placements provided. Mock data generation is FORBIDDEN."
+            )
+
+        violations = []
+        warnings = []
+        violation_details = []
+
+        # 1. 상평형 검사
+        if phase_imbalance_pct > self.max_limits["phase_imbalance_pct"]:
+            violation = ViolationDetail(
+                type="phase_imbalance",
+                severity="critical",
+                value=phase_imbalance_pct,
+                limit=self.max_limits["phase_imbalance_pct"],
+                message=f"Phase imbalance {phase_imbalance_pct:.2f}% exceeds {self.max_limits['phase_imbalance_pct']}% limit",
+                cause="Uneven distribution of single-phase loads",
+                recommendation="Redistribute single-phase breakers across phases",
+            )
+            violations.append(violation.message)
+            violation_details.append(violation)
+        elif phase_imbalance_pct > self.max_limits["phase_imbalance_pct"] * 0.875:
+            # 3.5% 경고
+            warnings.append(
+                f"Phase imbalance {phase_imbalance_pct:.2f}% approaching limit"
+            )
+
+        # 2. 간섭 검증
+        if clearance_violations > self.max_limits["clearances_violation"]:
+            violation = ViolationDetail(
+                type="clearance",
+                severity="critical",
+                count=clearance_violations,
+                message=f"Found {clearance_violations} clearance violations",
+                cause="Breakers placed too close together",
+                recommendation=f"Ensure minimum {self.max_limits['min_clearance_mm']}mm clearance between breakers",
+            )
+            violations.append(violation.message)
+            violation_details.append(violation)
+
+        # 3. 열 검증
+        if thermal_violations > self.max_limits["thermal_violation"]:
+            violation = ViolationDetail(
+                type="thermal",
+                severity="critical",
+                count=thermal_violations,
+                message=f"Found {thermal_violations} thermal violations",
+                cause="Excessive heat concentration in rows",
+                recommendation=f"Redistribute high-current breakers, max {self.max_limits['row_heat_w']}W per row",
+            )
+            violations.append(violation.message)
+            violation_details.append(violation)
+
+        # 4. 패널 전체 열 검증
+        if total_heat_w > self.max_limits["panel_heat_w"]:
+            violation = ViolationDetail(
+                type="panel_thermal",
+                severity="critical",
+                value=total_heat_w,
+                limit=self.max_limits["panel_heat_w"],
+                message=f"Total heat {total_heat_w:.1f}W exceeds panel rating {self.max_limits['panel_heat_w']}W",
+                cause="Too many high-current breakers",
+                recommendation="Reduce total breaker capacity or split into multiple panels",
+            )
+            violations.append(violation.message)
+            violation_details.append(violation)
+        elif total_heat_w > self.max_limits["panel_heat_w"] * 0.8:
+            warnings.append(f"Total heat {total_heat_w:.1f}W approaching limit")
+
+        # 5. 개별 슬롯 위치 검증
+        for placement in placements:
+            row = placement.position.get("row", 0)
+            col = placement.position.get("col", 0)
+
+            # 위치 경계 검사 (row: 0~20, col: 0~1)
+            if row < 0 or row > 20:
+                violation = ViolationDetail(
+                    type="position",
+                    severity="error",
+                    breaker_id=placement.breaker_id,
+                    position=f"row={row}, col={col}",
+                    message=f"Breaker {placement.breaker_id} at invalid row {row}",
+                    cause="Position outside panel boundaries",
+                    recommendation="Ensure row within 0-20 range",
+                )
+                violations.append(violation.message)
+                violation_details.append(violation)
+
+        # 점수 계산
+        score = 100
+        score -= len(violations) * 20
+        score -= len(warnings) * 5
+        score = max(0, score)
+
+        # 결과 생성
+        result = CriticResult(
+            passed=len(violations) == 0,
+            score=score,
+            violations=violations,
+            warnings=warnings,
+            violation_details=violation_details,
+            phase_imbalance_pct=phase_imbalance_pct,
+            total_heat_w=total_heat_w,
+            clearance_violations=clearance_violations,
+            thermal_violations=thermal_violations,
+            thresholds=self.max_limits.copy(),
+            metrics={
+                "phase_imbalance_pct": phase_imbalance_pct,
+                "clearance_violations": clearance_violations,
+                "thermal_violations": thermal_violations,
+                "total_heat_w": total_heat_w,
+                "slot_count": len(placements),
+            },
+        )
+
+        # 로깅
+        if result.passed:
+            logger.info(
+                f"✅ Placement passed all checks (score={result.score}, slots={len(placements)})"
+            )
+        else:
+            logger.error(
+                f"❌ Placement has {len(result.violations)} violations (score={result.score})"
+            )
+            for v in result.violations:
+                logger.error(f"   - {v}")
+
+        return result
+
+    def generate_svg_evidence(
+        self, result: CriticResult, output_path: Optional[Path] = None
+    ) -> str:
+        """
+        SVG 시각화 Evidence 생성
+
+        Args:
+            result: 검증 결과
+            output_path: 출력 파일 경로 (optional)
+
+        Returns:
+            SVG 문자열
+        """
+        svg_parts = [
+            '<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400" viewBox="0 0 600 400">',
+            '<rect width="100%" height="100%" fill="#f8f8f8" stroke="#333" stroke-width="2"/>',
+            '<text x="300" y="30" text-anchor="middle" font-size="20" font-weight="bold">Placement Critique</text>',
+        ]
+
+        # 상태 표시
+        status_color = "#4caf50" if result.passed else "#f44336"
+        status_text = "PASSED" if result.passed else "FAILED"
+        svg_parts.append(
+            f'<rect x="250" y="50" width="100" height="30" fill="{status_color}" rx="5"/>'
+        )
+        svg_parts.append(
+            f'<text x="300" y="70" text-anchor="middle" font-size="14" fill="white">{status_text}</text>'
+        )
+
+        # 점수 표시
+        svg_parts.append(
+            f'<text x="300" y="110" text-anchor="middle" font-size="16">Score: {result.score}/100</text>'
+        )
+
+        # 위반 사항 표시 (최대 5개)
+        y_pos = 150
+        for i, detail in enumerate(result.violation_details[:5]):
+            svg_parts.append(f'<circle cx="50" cy="{y_pos}" r="8" fill="#f44336"/>')
+            msg = detail.message[:50] if detail.message else ""
+            svg_parts.append(
+                f'<text x="70" y="{y_pos + 5}" font-size="12">{detail.type}: {msg}...</text>'
+            )
+            y_pos += 30
+
+        # 메트릭스 표시
+        svg_parts.append(
+            f'<text x="50" y="320" font-size="14">Phase Imbalance: {result.phase_imbalance_pct:.2f}%</text>'
+        )
+        svg_parts.append(
+            f'<text x="50" y="340" font-size="14">Total Heat: {result.total_heat_w:.1f}W</text>'
+        )
+        svg_parts.append(
+            f'<text x="50" y="360" font-size="14">Violations: {len(result.violations)} | Warnings: {len(result.warnings)}</text>'
+        )
+
+        svg_parts.append("</svg>")
+        svg_content = "\n".join(svg_parts)
+
+        # 파일 저장 (optional)
+        if output_path:
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            output_path.write_text(svg_content, encoding="utf-8")
+            logger.info(f"📊 SVG evidence saved to {output_path}")
+
+        return svg_content

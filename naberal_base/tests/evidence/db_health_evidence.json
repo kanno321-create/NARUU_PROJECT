@@ -1,0 +1,12 @@
+{
+  "test_type": "database_health_check_async",
+  "timestamp": "2025-10-14T00:00:00Z",
+  "database_type": "postgresql",
+  "connected": true,
+  "timezone": "Etc/UTC",
+  "timezone_utc": false,
+  "transaction_test": true,
+  "table_count": 4,
+  "status": "healthy",
+  "rebuild_phase": "C-T2 (Async SQLAlchemy)"
+}

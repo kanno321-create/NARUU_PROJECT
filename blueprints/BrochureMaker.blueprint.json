@@ -1,0 +1,126 @@
+// filename: blueprints/BrochureMaker.blueprint.json
+{
+  "name": "Naruu — BrochureMaker (Daegu Places → Copy → Slides → PDF)",
+  "metadataVersion": 2,
+  "modules": [
+    {
+      "id": 1,
+      "name": "Load Places(active, limit 8)",
+      "type": "google-sheets-search-rows",
+      "connection": "conn-gsheets-naruu",
+      "config": {
+        "spreadsheetId": "REPLACE_WITH_SHEET_ID",
+        "range": "daegu_places!A2:K",
+        "filters": [
+          { "column": "Status", "op": "eq", "value": "active" }
+        ],
+        "orderBy": [{ "column": "Category", "dir": "asc" }],
+        "limit": 8
+      }
+    },
+    {
+      "id": 2,
+      "name": "Map To JSON Array",
+      "type": "json-aggregate",
+      "config": {
+        "payload": {
+          "places": "{{1.output.rows}}"
+        }
+      }
+    },
+    {
+      "id": 3,
+      "name": "Generate Copies (OpenAI Chat) — Japanese",
+      "type": "openai-chat-completions",
+      "connection": "conn-openai-naruu",
+      "config": {
+        "model": "gpt-5",
+        "system": "旅行パンフ用コピーライター。明るく、上品で、食欲と訪問欲をそそる2–3文を各スポットにつき生成。テンプレ: 『**[場所名]** — [フック] [感覚描写1文]。 [訪問の一言]。』",
+        "messages": [
+          { "role": "user", "content": "以下のスポット一覧(最大8件)について、各スポットごとに上記テンプレートで短いコピーを書いてください。JSON配列で返して: [{place_id, copy_ja}]。\n\nスポット一覧(JSON): {{2.outputs.payload}}" }
+        ],
+        "temperature": 0.7,
+        "max_tokens": 1500
+      },
+      "outputs": { "copies_json": "{{choices[0].message.content}}" }
+    },
+    {
+      "id": 4,
+      "name": "Parse Copies JSON",
+      "type": "json-parse",
+      "config": { "json": "{{3.outputs.copies_json}}" }
+    },
+    {
+      "id": 5,
+      "name": "Duplicate Slides Template",
+      "type": "google-slides-duplicate-presentation",
+      "connection": "conn-gdrive-naruu",
+      "config": {
+        "templatePresentationId": "REPLACE_WITH_SLIDES_TEMPLATE_ID",
+        "newTitle": "Daegu Highlights — Naruu — {{executionTime}}"
+      },
+      "outputs": { "presentationId": "{{id}}" }
+    },
+    {
+      "id": 6,
+      "name": "Fill Slides (Loop)",
+      "type": "iterator",
+      "config": { "array": "{{1.output.rows}}" }
+    },
+    {
+      "id": 7,
+      "name": "Find Copy for Place",
+      "type": "json-search",
+      "config": {
+        "json": "{{4.outputs}}",
+        "path": "$[?(@.place_id=='{{6.item.Place_ID}}')]"
+      }
+    },
+    {
+      "id": 8,
+      "name": "Slides: Replace Text & Image",
+      "type": "google-slides-batch-update",
+      "connection": "conn-gdrive-naruu",
+      "config": {
+        "presentationId": "{{5.outputs.presentationId}}",
+        "replacements": [
+          { "find": "{{PLACE_NAME}}", "replace": "{{6.item.Name}}" },
+          { "find": "{{PLACE_COPY}}", "replace": "{{7.outputs[0].copy_ja}}" },
+          { "find": "{{PLACE_ADDR}}", "replace": "{{6.item.Address}}" },
+          { "find": "{{PLACE_EXTRA}}", "replace": "{{6.item.CelebrityOrDrama}} · {{6.item.ShortPoint}}" }
+        ],
+        "replaceImage": {
+          "placeholderObjectId": "PLACE_IMAGE_ID", 
+          "imageUrl": "{{6.item.PhotoURL}}"
+        }
+      }
+    },
+    {
+      "id": 9,
+      "name": "Export PDF",
+      "type": "google-slides-export-pdf",
+      "connection": "conn-gdrive-naruu",
+      "config": {
+        "presentationId": "{{5.outputs.presentationId}}",
+        "saveToDrive": true,
+        "folderId": "REPLACE_WITH_DRIVE_FOLDER"
+      },
+      "outputs": { "pdf_url": "{{webViewLink}}", "pdf_file_id": "{{id}}" }
+    },
+    {
+      "id": 10,
+      "name": "Report (Log/Return)",
+      "type": "json-aggregate",
+      "config": {
+        "payload": {
+          "pdf_url": "{{9.outputs.pdf_url}}",
+          "slides_id": "{{5.outputs.presentationId}}",
+          "count": "{{1.output.rows.length}}"
+        }
+      }
+    }
+  ],
+  "triggers": [],
+  "onDemand": true,
+  "description": "Reads up to 8 active Daegu places → generates JP brochure copies → duplicates Google Slides template → replaces placeholders & image → exports PDF → returns link."
+}

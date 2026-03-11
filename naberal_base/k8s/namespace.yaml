@@ -1,0 +1,117 @@
+# KIS Estimator - Kubernetes Namespaces
+# Separate namespaces for production and staging
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kis-estimator
+  labels:
+    app: kis-estimator
+    environment: production
+    istio-injection: enabled
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kis-estimator-staging
+  labels:
+    app: kis-estimator
+    environment: staging
+    istio-injection: enabled
+
+---
+# Resource Quotas for production namespace
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: kis-estimator-quota
+  namespace: kis-estimator
+spec:
+  hard:
+    requests.cpu: "4"
+    requests.memory: "8Gi"
+    limits.cpu: "8"
+    limits.memory: "16Gi"
+    pods: "30"
+    services: "10"
+    secrets: "20"
+    configmaps: "20"
+
+---
+# Resource Quotas for staging namespace
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: kis-estimator-staging-quota
+  namespace: kis-estimator-staging
+spec:
+  hard:
+    requests.cpu: "2"
+    requests.memory: "4Gi"
+    limits.cpu: "4"
+    limits.memory: "8Gi"
+    pods: "10"
+    services: "5"
+    secrets: "10"
+    configmaps: "10"
+
+---
+# LimitRange for default resource constraints
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: kis-estimator-limits
+  namespace: kis-estimator
+spec:
+  limits:
+    - default:
+        cpu: "500m"
+        memory: "512Mi"
+      defaultRequest:
+        cpu: "100m"
+        memory: "256Mi"
+      type: Container
+
+---
+# Network Policy for namespace isolation
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: kis-estimator-network-policy
+  namespace: kis-estimator
+spec:
+  podSelector:
+    matchLabels:
+      app: kis-estimator
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: ingress-nginx
+        - podSelector:
+            matchLabels:
+              app: kis-estimator
+      ports:
+        - protocol: TCP
+          port: 8000
+  egress:
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: TCP
+          port: 5432  # PostgreSQL
+        - protocol: TCP
+          port: 6379  # Redis
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: TCP
+          port: 443   # HTTPS (external APIs)
+        - protocol: TCP
+          port: 53    # DNS
+        - protocol: UDP
+          port: 53    # DNS

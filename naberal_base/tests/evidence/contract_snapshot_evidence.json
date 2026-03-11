@@ -1,0 +1,37 @@
+{
+  "test_type": "contract_snapshot",
+  "timestamp": "2025-10-05T00:00:00Z",
+  "contract_file": "dist\\contract\\openapi_v1.0.0.json",
+  "openapi_version": "3.1.0",
+  "api_version": "1.0.0",
+  "endpoint_count": 15,
+  "schema_count": 8,
+  "endpoints": [
+    "/v1/catalog/items",
+    "/v1/catalog/items/{sku}",
+    "/v1/catalog/stats",
+    "/v1/catalog/metrics",
+    "/v1/catalog/cache/invalidate",
+    "/v1/catalog/cache/warm",
+    "/v1/estimate",
+    "/v1/estimate/plan",
+    "/v1/estimate/estimate",
+    "/v1/estimate/execute",
+    "/v1/estimate/{estimate_id}",
+    "/health",
+    "/health/live",
+    "/health/db",
+    "/readyz"
+  ],
+  "schemas": [
+    "BreakerSpec",
+    "EstimateDetailResponse",
+    "ExecuteRequest",
+    "ExecuteResponse",
+    "HTTPValidationError",
+    "PlanRequest",
+    "PlanResponse",
+    "ValidationError"
+  ],
+  "status": "passed"
+}

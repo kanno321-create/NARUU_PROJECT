@@ -1,0 +1,573 @@
+{
+  "meta": {
+    "name": "validation_knowledge_consolidated",
+    "version": "1.0.0",
+    "created_at_utc+09": "2025-11-18T00:00:00+09:00",
+    "description": "검증 규칙 통합: 7가지 필수 체크, 품질 게이트, 안전 규정",
+    "sources": [
+      "ai_estimation_core.json (validation section)",
+      "CLAUDE.md (필수 검증 체크리스트)",
+      "1_breakers.json (차단기 검증 규칙)",
+      "2_enclosures.json (외함 검증 규칙)",
+      "3_accessories.json (부속자재 검증 규칙)"
+    ],
+    "locale": "ko-KR",
+    "validation_philosophy": "실패 시 견적 차단 (MANDATORY) 또는 경고 (INFORMATIONAL)"
+  },
+
+  "mandatory_checks": {
+    "description": "필수 검증 체크 (실패 시 견적 차단)",
+    "total_count": 7,
+    "checks": [
+      "CHK_BUNDLE_MAGNET",
+      "CHK_BUNDLE_TIMER",
+      "CHK_ENCLOSURE_H_FORMULA",
+      "CHK_PHASE_BALANCE",
+      "CHK_CLEARANCE_VIOLATIONS",
+      "CHK_THERMAL_VIOLATIONS",
+      "CHK_FORMULA_PRESERVATION"
+    ],
+    "enforcement": "실패 시 견적 생성 차단, 오류 메시지 반환"
+  },
+
+  "check_definitions": {
+    "CHK_BUNDLE_MAGNET": {
+      "id": "CHK_BUNDLE_MAGNET",
+      "class": "MANDATORY",
+      "priority": 1,
+      "description": "마그네트 존재 시 동반자재 포함 확인",
+      "trigger": "마그네트 컨택터가 BOM에 존재하는 경우",
+      "required_items": [
+        {
+          "item_id": "FUSEHOLDER",
+          "qty_per_magnet": 1,
+          "price": 4000
+        },
+        {
+          "item_id": "TERMINAL_BLOCK_600V",
+          "qty_per_magnet": 3,
+          "price": 4000,
+          "critical_note": "CRITICAL: 3개임 (sub_material_bundles.json에 1개로 잘못 기재)"
+        },
+        {
+          "item_id": "PVC_DUCT_40",
+          "qty_per_magnet": 2,
+          "price": 3000,
+          "critical_note": "CRITICAL: 상단 1개 + 하단 1개 = 2개"
+        },
+        {
+          "item_id": "CABLE_WIRE",
+          "qty_per_magnet": 2,
+          "price": 25000,
+          "critical_note": "CRITICAL: 2개임 (sub_material_bundles.json에 1개로 잘못 기재)"
+        }
+      ],
+      "labor_cost_required": 20000,
+      "validation_logic": {
+        "step_1": "BOM에서 마그네트 컨택터 수량 확인",
+        "step_2": "각 동반자재가 BOM에 포함되어 있는지 확인",
+        "step_3": "각 동반자재의 수량이 정확한지 확인 (마그네트 수량 × 필요 수량)",
+        "step_4": "인건비가 포함되어 있는지 확인 (마그네트 수량 × 20,000원)"
+      },
+      "failure_action": "견적 차단",
+      "error_message": "마그네트 컨택터가 포함되어 있으나 필수 동반자재가 누락되었습니다. FUSEHOLDER, TERMINAL_BLOCK_600V (×3), PVC_DUCT_40 (×2), CABLE_WIRE (×2), 인건비를 추가하세요.",
+      "reference": "3_accessories.json → bundle_rules → BND_MAGNET_BASE"
+    },
+
+    "CHK_BUNDLE_TIMER": {
+      "id": "CHK_BUNDLE_TIMER",
+      "class": "MANDATORY",
+      "priority": 2,
+      "description": "타이머 존재 시 동반자재 포함 확인",
+      "trigger": "타이머가 BOM에 존재하는 경우",
+      "required_items": [
+        {
+          "item_id": "CABLE_WIRE",
+          "qty_per_timer": 1,
+          "price": 25000
+        }
+      ],
+      "labor_cost_required": 12000,
+      "validation_logic": {
+        "step_1": "BOM에서 타이머 수량 확인",
+        "step_2": "CABLE_WIRE가 BOM에 포함되어 있는지 확인",
+        "step_3": "CABLE_WIRE 수량이 정확한지 확인 (타이머 수량 × 1)",
+        "step_4": "인건비가 포함되어 있는지 확인 (타이머 수량 × 12,000원)"
+      },
+      "failure_action": "견적 차단",
+      "error_message": "타이머가 포함되어 있으나 필수 동반자재가 누락되었습니다. CABLE_WIRE, 인건비를 추가하세요.",
+      "reference": "3_accessories.json → bundle_rules → BND_TIMER_EFFECT"
+    },
+
+    "CHK_ENCLOSURE_H_FORMULA": {
+      "id": "CHK_ENCLOSURE_H_FORMULA",
+      "class": "MANDATORY",
+      "priority": 3,
+      "description": "외함 높이 공식 적용 확인",
+      "trigger": "외함 크기 계산 시",
+      "formula": "H = A + B + C + D + E",
+      "components": {
+        "A": "상단 여유 (메인 차단기 프레임별)",
+        "B": "메인-분기 간격 (30mm)",
+        "C": "분기차단기 총 높이",
+        "D": "하단 여유 (메인 암페어별)",
+        "E": "부속자재 여유 (PVC 덕트 40mm, 마그네트 높이 등)"
+      },
+      "validation_logic": {
+        "step_1": "각 컴포넌트(A, B, C, D, E) 값 계산",
+        "step_2": "총 높이 H = A + B + C + D + E 계산",
+        "step_3": "계산된 H값이 외함 높이로 사용되었는지 확인",
+        "step_4": "2칸 취부 시 보정 적용 확인 (H = Panel1_H + Panel2_H + 격벽(50mm) + 여유)"
+      },
+      "special_cases": {
+        "dual_panel": {
+          "description": "1면 외함에 분전반 2개",
+          "formula": "H = Panel1_H + Panel2_H + 중간격벽(50mm) + 상여유 + 하여유"
+        },
+        "with_accessories": {
+          "description": "부속자재 포함 시",
+          "formula": "H = 기본H + PVC_덕트(2×40mm) + 마그네트_높이"
+        }
+      },
+      "failure_action": "견적 차단",
+      "error_message": "외함 높이 공식이 올바르게 적용되지 않았습니다. H = A + B + C + D + E 공식을 확인하세요.",
+      "reference": "2_enclosures.json → sizing_rules → height_calculation"
+    },
+
+    "CHK_PHASE_BALANCE": {
+      "id": "CHK_PHASE_BALANCE",
+      "class": "MANDATORY",
+      "priority": 4,
+      "description": "상평형 확인 (≤ 4%)",
+      "trigger": "3상 분기차단기 배치 시",
+      "threshold": 4.0,
+      "unit": "%",
+      "formula": "상평형 = max(|R상_전류 - 평균전류|, |S상_전류 - 평균전류|, |T상_전류 - 평균전류|) / 평균전류 × 100",
+      "validation_logic": {
+        "step_1": "각 상(R, S, T)별 총 전류 계산",
+        "step_2": "평균 전류 = (R + S + T) / 3 계산",
+        "step_3": "각 상별 편차 = |상_전류 - 평균_전류| 계산",
+        "step_4": "최대 편차 / 평균_전류 × 100 계산",
+        "step_5": "상평형 ≤ 4% 확인"
+      },
+      "examples": [
+        {
+          "R_current": 100,
+          "S_current": 95,
+          "T_current": 105,
+          "average": 100,
+          "max_deviation": 5,
+          "phase_balance": 5.0,
+          "result": "FAIL (5% > 4%)"
+        },
+        {
+          "R_current": 100,
+          "S_current": 98,
+          "T_current": 102,
+          "average": 100,
+          "max_deviation": 2,
+          "phase_balance": 2.0,
+          "result": "PASS (2% ≤ 4%)"
+        }
+      ],
+      "failure_action": "견적 차단",
+      "error_message": "상평형이 4%를 초과했습니다. 분기차단기 배치를 재조정하세요.",
+      "reference": "1_breakers.json → layout_rules → branch_bus_connection"
+    },
+
+    "CHK_CLEARANCE_VIOLATIONS": {
+      "id": "CHK_CLEARANCE_VIOLATIONS",
+      "class": "MANDATORY",
+      "priority": 5,
+      "description": "차단기 간 간섭 확인 (= 0)",
+      "trigger": "차단기 배치 시",
+      "threshold": 0,
+      "clearance_requirements": {
+        "horizontal": {
+          "min_mm": 10,
+          "description": "좌우 차단기 간 최소 간격 10mm"
+        },
+        "vertical": {
+          "min_mm": 10,
+          "description": "상하 차단기 간 최소 간격 10mm"
+        },
+        "facing": {
+          "description": "마주보기 배치 시 프레임 일치 확인",
+          "rule": "같은 프레임끼리 행(Row) 단위 Pairing"
+        }
+      },
+      "validation_logic": {
+        "step_1": "모든 차단기 쌍에 대해 거리 계산",
+        "step_2": "좌우 간격 ≥ 10mm 확인",
+        "step_3": "상하 간격 ≥ 10mm 확인",
+        "step_4": "마주보기 배치 시 프레임 일치 확인",
+        "step_5": "위반 건수 = 0 확인"
+      },
+      "failure_action": "견적 차단",
+      "error_message": "차단기 간 간섭이 발생했습니다. 배치를 재조정하세요.",
+      "reference": "1_breakers.json → layout_rules → facing_arrangement"
+    },
+
+    "CHK_THERMAL_VIOLATIONS": {
+      "id": "CHK_THERMAL_VIOLATIONS",
+      "class": "MANDATORY",
+      "priority": 6,
+      "description": "열 밀도 위반 확인 (= 0)",
+      "trigger": "차단기 배치 시",
+      "threshold": 0,
+      "thermal_limits": {
+        "max_current_density": {
+          "value": 0.8,
+          "unit": "A/mm²",
+          "description": "최대 전류 밀도"
+        },
+        "temperature_rise": {
+          "max_K": 70,
+          "description": "최대 온도 상승 (IEC 61439-1:2020)"
+        }
+      },
+      "validation_logic": {
+        "step_1": "각 차단기별 발열량 계산",
+        "step_2": "외함 내부 총 발열량 계산",
+        "step_3": "외함 체적당 발열량 확인",
+        "step_4": "열 밀도 한계값 초과 확인",
+        "step_5": "위반 건수 = 0 확인"
+      },
+      "failure_action": "견적 차단",
+      "error_message": "열 밀도가 안전 한계를 초과했습니다. 외함 크기를 늘리거나 차단기 수량을 줄이세요.",
+      "reference": "IEC 61439-1:2020 온도 상승 설계값"
+    },
+
+    "CHK_FORMULA_PRESERVATION": {
+      "id": "CHK_FORMULA_PRESERVATION",
+      "class": "MANDATORY",
+      "priority": 7,
+      "description": "Excel 수식 보존 확인 (= 100%)",
+      "trigger": "Excel 문서 생성 시",
+      "threshold": 100,
+      "unit": "%",
+      "critical_formulas": [
+        {
+          "cell": "G[소계행]",
+          "formula": "=SUM(G3:G[조립비행])",
+          "description": "소계 행 합계 수식"
+        },
+        {
+          "cell": "G[합계행]",
+          "formula": "=소계G×합계E",
+          "description": "합계 행 계산 수식"
+        },
+        {
+          "cell": "H17 (표지)",
+          "formula": "=+견적서!G[소계행]",
+          "description": "표지 분전반 가격 링크"
+        },
+        {
+          "cell": "I17 (표지)",
+          "formula": "=H17*G17",
+          "description": "표지 금액 계산"
+        },
+        {
+          "cell": "I18 (표지)",
+          "formula": "=SUM(I17:I[마지막분전반])",
+          "description": "표지 소계"
+        },
+        {
+          "cell": "I19 (표지)",
+          "formula": "=I18*1.1",
+          "description": "부가세 포함 금액"
+        }
+      ],
+      "validation_logic": {
+        "step_1": "생성된 Excel 파일 열기",
+        "step_2": "각 중요 셀의 수식 존재 여부 확인",
+        "step_3": "수식 형식이 올바른지 확인",
+        "step_4": "네임드 범위 손상 확인",
+        "step_5": "수식 보존율 = (보존된_수식 / 총_수식) × 100 계산",
+        "step_6": "수식 보존율 = 100% 확인"
+      },
+      "failure_action": "견적 차단",
+      "error_message": "Excel 수식이 손상되었습니다. 수식 보존율 100%를 유지해야 합니다.",
+      "reference": "견적서장성법V1.0.txt (소계/합계 수식)"
+    }
+  },
+
+  "informational_checks": {
+    "description": "정보성 검증 체크 (실패 시 경고)",
+    "checks": [
+      "CHK_PBL_ON_OFF",
+      "CHK_PVC_DUCT_EFFECT",
+      "CHK_FIT_SCORE",
+      "CHK_IP_RATING",
+      "CHK_DOOR_CLEARANCE"
+    ]
+  },
+
+  "informational_check_definitions": {
+    "CHK_PBL_ON_OFF": {
+      "id": "CHK_PBL_ON_OFF",
+      "class": "INFORMATIONAL",
+      "description": "PBL 스위치 수량 확인 (= 마그네트 수량 × 2)",
+      "trigger": "PBL 스위치가 BOM에 존재하는 경우",
+      "formula": "PBL_qty = Magnet_qty × 2",
+      "validation_logic": {
+        "step_1": "BOM에서 마그네트 수량 확인",
+        "step_2": "BOM에서 PBL 수량 확인",
+        "step_3": "PBL 수량 = 마그네트 수량 × 2 확인"
+      },
+      "failure_action": "경고",
+      "warning_message": "PBL 스위치 수량이 마그네트 수량 × 2와 일치하지 않습니다. 확인하세요.",
+      "reference": "3_accessories.json → bundle_rules → BND_PBL_ON_OFF"
+    },
+
+    "CHK_PVC_DUCT_EFFECT": {
+      "id": "CHK_PVC_DUCT_EFFECT",
+      "class": "INFORMATIONAL",
+      "description": "PVC 덕트 포함 시 유효폭 감소 확인 (-100mm)",
+      "trigger": "PVC 덕트가 BOM에 존재하는 경우",
+      "width_reduction": 100,
+      "calculation": "좌우 여유 각 30mm + 덕트 폭 40mm = -100mm",
+      "validation_logic": {
+        "step_1": "BOM에서 PVC 덕트 존재 확인",
+        "step_2": "외함 유효폭 = 외함폭 - 100mm 적용 확인"
+      },
+      "failure_action": "경고",
+      "warning_message": "PVC 덕트가 포함되어 있습니다. 유효폭 -100mm가 적용되었는지 확인하세요.",
+      "reference": "3_accessories.json → bundle_rules → BND_PVC_DUCT_EFFECT"
+    },
+
+    "CHK_FIT_SCORE": {
+      "id": "CHK_FIT_SCORE",
+      "class": "QUALITY_GATE",
+      "description": "외함 적합도 확인 (≥ 0.90)",
+      "threshold": 0.90,
+      "formula": "fit_score = 실제_사용_공간 / 외함_내부_공간",
+      "validation_logic": {
+        "step_1": "차단기 + 부속자재 총 체적 계산",
+        "step_2": "외함 내부 체적 계산",
+        "step_3": "fit_score = 총_체적 / 내부_체적 계산",
+        "step_4": "fit_score ≥ 0.90 확인"
+      },
+      "failure_action": "경고",
+      "warning_message": "외함 적합도가 0.90 미만입니다. 외함 크기를 재검토하세요.",
+      "reference": "2_enclosures.json → validation_rules → fit_score"
+    },
+
+    "CHK_IP_RATING": {
+      "id": "CHK_IP_RATING",
+      "class": "QUALITY_GATE",
+      "description": "IP 등급 확인",
+      "indoor_minimum": "IP44",
+      "outdoor_minimum": "IP54",
+      "validation_logic": {
+        "step_1": "설치 장소 확인 (옥내/옥외)",
+        "step_2": "외함 IP 등급 확인",
+        "step_3": "옥내: IP44 이상, 옥외: IP54 이상 확인"
+      },
+      "failure_action": "경고",
+      "warning_message": "IP 등급이 최소 요구사항을 충족하지 않습니다.",
+      "reference": "2_enclosures.json → validation_rules → ip_rating"
+    },
+
+    "CHK_DOOR_CLEARANCE": {
+      "id": "CHK_DOOR_CLEARANCE",
+      "class": "QUALITY_GATE",
+      "description": "도어 여유 확인 (≥ 30mm)",
+      "threshold": 30,
+      "unit": "mm",
+      "validation_logic": {
+        "step_1": "외함 깊이 확인",
+        "step_2": "차단기 최대 깊이 확인",
+        "step_3": "도어 여유 = 외함깊이 - 차단기깊이 - 배선여유 계산",
+        "step_4": "도어 여유 ≥ 30mm 확인"
+      },
+      "failure_action": "경고",
+      "warning_message": "도어 여유가 30mm 미만입니다. 외함 깊이를 늘리세요.",
+      "reference": "2_enclosures.json → validation_rules → door_clearance"
+    }
+  },
+
+  "quality_gates": {
+    "description": "품질 게이트 기준 (FIX-4 파이프라인)",
+    "stages": {
+      "stage_1_enclosure": {
+        "name": "Enclosure (외함 계산)",
+        "gates": [
+          {
+            "metric": "fit_score",
+            "threshold": "≥ 0.90",
+            "enforcement": "FAIL_FAST"
+          },
+          {
+            "metric": "ip_rating",
+            "threshold": "≥ IP44 (옥내) 또는 ≥ IP54 (옥외)",
+            "enforcement": "FAIL_FAST"
+          },
+          {
+            "metric": "door_clearance",
+            "threshold": "≥ 30mm",
+            "enforcement": "FAIL_FAST"
+          }
+        ]
+      },
+      "stage_2_breaker": {
+        "name": "Breaker (차단기 배치)",
+        "gates": [
+          {
+            "metric": "phase_balance",
+            "threshold": "≤ 4%",
+            "enforcement": "FAIL_FAST"
+          },
+          {
+            "metric": "clearance_violations",
+            "threshold": "= 0",
+            "enforcement": "FAIL_FAST"
+          },
+          {
+            "metric": "thermal_violations",
+            "threshold": "= 0",
+            "enforcement": "FAIL_FAST"
+          }
+        ]
+      },
+      "stage_3_format": {
+        "name": "Format (문서 포맷)",
+        "gates": [
+          {
+            "metric": "formula_preservation",
+            "threshold": "= 100%",
+            "enforcement": "FAIL_FAST"
+          },
+          {
+            "metric": "named_range_damage",
+            "threshold": "= 0",
+            "enforcement": "FAIL_FAST"
+          }
+        ]
+      },
+      "stage_4_cover": {
+        "name": "Cover (표지 생성)",
+        "gates": [
+          {
+            "metric": "cover_compliance",
+            "threshold": "= 100%",
+            "enforcement": "FAIL_FAST"
+          }
+        ]
+      },
+      "stage_5_doc_lint": {
+        "name": "Doc Lint (최종 검증)",
+        "gates": [
+          {
+            "metric": "lint_errors",
+            "threshold": "= 0",
+            "enforcement": "FAIL_FAST"
+          }
+        ]
+      }
+    }
+  },
+
+  "safety_compliance": {
+    "iec_61439_1_2020": {
+      "description": "IEC 61439-1:2020 저압개폐장치 및 제어장치 표준",
+      "key_requirements": [
+        {
+          "requirement": "절연 거리 (Clearance/Creepage)",
+          "690V": {
+            "clearance_mm": 4.0,
+            "creepage_mm": 6.3
+          },
+          "1000V": {
+            "clearance_mm": 5.5,
+            "creepage_mm": 8.0
+          },
+          "pollution_degree": 2
+        },
+        {
+          "requirement": "온도 상승 (Temperature Rise)",
+          "max_temperature_celsius": 105,
+          "max_rise_K": 70,
+          "applies_to": "구리 도체 연결부"
+        }
+      ]
+    },
+    "ks_c_4510_2021": {
+      "description": "KS C 4510:2021 저압개폐장치 및 제어장치 조립품 표준",
+      "key_requirements": [
+        {
+          "requirement": "배선 색상 코드",
+          "3_phase": {
+            "L1": "갈색 (brown)",
+            "L2": "검정 (black)",
+            "L3": "회색 (gray)",
+            "N": "청색 (blue)",
+            "PE": "녹/황 (green_yellow)"
+          }
+        },
+        {
+          "requirement": "외함 재질 최소 두께",
+          "steel_mm": 1.5,
+          "aluminum_mm": 2.0,
+          "stainless_mm": 1.2
+        }
+      ]
+    }
+  },
+
+  "regression_tests": {
+    "description": "회귀 테스트 골드셋 (20/20 PASS 필수)",
+    "golden_test_cases": 20,
+    "pass_requirement": "20/20 PASS (100%)",
+    "enforcement": "CI/CD 머지 게이트",
+    "test_categories": [
+      {
+        "category": "차단기 배치",
+        "test_count": 5,
+        "examples": ["소형차단기 배치", "4P N상 row-aware", "상평형 경계값", "마주보기 프레임 일치", "간섭 방지"]
+      },
+      {
+        "category": "외함 계산",
+        "test_count": 4,
+        "examples": ["H 공식 적용", "2칸 취부", "부속자재 포함", "fit_score 경계값"]
+      },
+      {
+        "category": "BOM 생성",
+        "test_count": 5,
+        "examples": ["마그네트 동반자재", "타이머 동반자재", "E.T 수량", "P-COVER 단가", "잡자재비"]
+      },
+      {
+        "category": "Excel 생성",
+        "test_count": 4,
+        "examples": ["수식 보존", "표지 링크", "소계/합계", "네임드 범위"]
+      },
+      {
+        "category": "검증 게이트",
+        "test_count": 2,
+        "examples": ["필수 체크 7가지", "품질 게이트 Stage 1~5"]
+      }
+    ]
+  },
+
+  "provenance": {
+    "consolidated_from": [
+      "ai_estimation_core.json (v1.2.0, 2025-09-10, validation section)",
+      "CLAUDE.md (필수 검증 체크리스트)",
+      "1_breakers.json (차단기 검증 규칙)",
+      "2_enclosures.json (외함 검증 규칙)",
+      "3_accessories.json (부속자재 검증 규칙)",
+      "IEC 61439-1:2020 (국제 표준)",
+      "KS C 4510:2021 (한국 표준)"
+    ],
+    "consolidation_date": "2025-11-18",
+    "author": "Narberal Gamma (NABERAL KIS Estimator AI)",
+    "review_status": "CEO approval required",
+    "version_history": [
+      {
+        "version": "1.0.0",
+        "date": "2025-11-18",
+        "changes": "Initial consolidated version with 7 mandatory checks + quality gates"
+      }
+    ]
+  }
+}
