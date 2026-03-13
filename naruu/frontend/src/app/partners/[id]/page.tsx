@@ -2,17 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
 import AppShell from "@/components/layout/app-shell";
 import { api } from "@/lib/api";
-import type { Partner, PartnerPerformance, SettlementReport, PartnerType } from "@/lib/types";
-
-const TYPE_LABELS: Record<PartnerType, string> = {
-  hospital: "병원",
-  clinic: "클리닉",
-  restaurant: "레스토랑",
-  hotel: "호텔",
-  shop: "샵",
-};
+import type { Partner, PartnerPerformance, SettlementReport } from "@/lib/types";
+import { PARTNER_TYPE_LABELS } from "@/lib/constants";
+import LoadingSpinner from "@/components/ui/loading-spinner";
+import ErrorBanner from "@/components/ui/error-banner";
 
 export default function PartnerDetailPage() {
   const params = useParams();
@@ -23,6 +19,7 @@ export default function PartnerDetailPage() {
   const [performance, setPerformance] = useState<PartnerPerformance | null>(null);
   const [settlement, setSettlement] = useState<SettlementReport | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [settlementYear, setSettlementYear] = useState(new Date().getFullYear());
   const [settlementMonth, setSettlementMonth] = useState(new Date().getMonth() + 1);
   const [loadingSettlement, setLoadingSettlement] = useState(false);
@@ -54,7 +51,7 @@ export default function PartnerDetailPage() {
       );
       setSettlement(data);
     } catch (e) {
-      alert("정산 조회 실패: " + (e instanceof Error ? e.message : "알 수 없는 오류"));
+      setError("정산 조회 실패: " + (e instanceof Error ? e.message : "알 수 없는 오류"));
     } finally {
       setLoadingSettlement(false);
     }
@@ -63,7 +60,7 @@ export default function PartnerDetailPage() {
   if (loading) {
     return (
       <AppShell>
-        <div className="flex items-center justify-center py-20 text-gray-400">로딩 중...</div>
+        <LoadingSpinner text="제휴처 로딩 중..." />
       </AppShell>
     );
   }
@@ -77,15 +74,17 @@ export default function PartnerDetailPage() {
   return (
     <AppShell>
       <div className="flex items-center gap-3 mb-6">
-        <button onClick={() => router.push("/partners")} className="text-gray-400 hover:text-gray-600">
-          ← 목록
-        </button>
+        <Link href="/partners" className="text-gray-400 hover:text-gray-600">
+          &larr; 목록
+        </Link>
         <h2 className="text-2xl font-bold text-gray-800">{partner.name_ko}</h2>
         {partner.name_ja && <span className="text-gray-400 text-sm">({partner.name_ja})</span>}
         <span className={`text-xs px-2 py-1 rounded-full font-medium ${partner.is_active ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}>
           {partner.is_active ? "활성" : "비활성"}
         </span>
       </div>
+
+      <ErrorBanner message={error} />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left: Info + Performance */}
@@ -104,7 +103,7 @@ export default function PartnerDetailPage() {
             <dl className="grid grid-cols-2 gap-4 text-sm">
               <div>
                 <dt className="text-gray-500">유형</dt>
-                <dd className="font-medium">{TYPE_LABELS[partner.type]}</dd>
+                <dd className="font-medium">{PARTNER_TYPE_LABELS[partner.type]}</dd>
               </div>
               <div>
                 <dt className="text-gray-500">커미션율</dt>
@@ -184,6 +183,7 @@ export default function PartnerDetailPage() {
               <select
                 value={settlementYear}
                 onChange={(e) => setSettlementYear(Number(e.target.value))}
+                aria-label="정산 연도"
                 className="px-3 py-2 border border-gray-200 rounded-lg text-sm"
               >
                 {[2024, 2025, 2026].map((y) => (
@@ -193,6 +193,7 @@ export default function PartnerDetailPage() {
               <select
                 value={settlementMonth}
                 onChange={(e) => setSettlementMonth(Number(e.target.value))}
+                aria-label="정산 월"
                 className="px-3 py-2 border border-gray-200 rounded-lg text-sm"
               >
                 {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (

@@ -2,13 +2,16 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import AppShell from "@/components/layout/app-shell";
 import { api } from "@/lib/api";
 import type { Review, ReviewPlatform } from "@/lib/types";
+import ErrorBanner from "@/components/ui/error-banner";
 
 export default function NewReviewPage() {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState({
     platform: "google" as ReviewPlatform,
     rating: "",
@@ -25,7 +28,7 @@ export default function NewReviewPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!form.content_ja && !form.content_ko) {
-      alert("리뷰 내용을 입력하세요 (일본어 또는 한국어).");
+      setError("리뷰 내용을 입력하세요 (일본어 또는 한국어).");
       return;
     }
 
@@ -43,7 +46,7 @@ export default function NewReviewPage() {
       const created = await api.post<Review>("/reviews", body);
       router.push(`/reviews/${created.id}`);
     } catch (e) {
-      alert("등록 실패: " + (e instanceof Error ? e.message : "알 수 없는 오류"));
+      setError("등록 실패: " + (e instanceof Error ? e.message : "알 수 없는 오류"));
     } finally {
       setSaving(false);
     }
@@ -52,18 +55,21 @@ export default function NewReviewPage() {
   return (
     <AppShell>
       <div className="flex items-center gap-3 mb-6">
-        <button onClick={() => router.push("/reviews")} className="text-gray-400 hover:text-gray-600">
-          ← 목록
-        </button>
+        <Link href="/reviews" className="text-gray-400 hover:text-gray-600">
+          &larr; 목록
+        </Link>
         <h2 className="text-2xl font-bold text-gray-800">리뷰 등록</h2>
       </div>
+
+      <ErrorBanner message={error} />
 
       <form onSubmit={handleSubmit} className="max-w-2xl space-y-6">
         <div className="bg-white rounded-xl p-6 shadow-sm space-y-4">
           {/* Platform */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">플랫폼 *</label>
+            <label htmlFor="review-platform" className="block text-sm font-medium text-gray-700 mb-1">플랫폼 *</label>
             <select
+              id="review-platform"
               value={form.platform}
               onChange={(e) => update("platform", e.target.value)}
               className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
@@ -78,8 +84,9 @@ export default function NewReviewPage() {
 
           {/* Rating */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">평점 (1.0~5.0)</label>
+            <label htmlFor="review-rating" className="block text-sm font-medium text-gray-700 mb-1">평점 (1.0~5.0)</label>
             <input
+              id="review-rating"
               type="number"
               step="0.1"
               min="1"
@@ -93,8 +100,9 @@ export default function NewReviewPage() {
 
           {/* Content JA */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">리뷰 내용 (일본어)</label>
+            <label htmlFor="review-content-ja" className="block text-sm font-medium text-gray-700 mb-1">리뷰 내용 (일본어)</label>
             <textarea
+              id="review-content-ja"
               value={form.content_ja}
               onChange={(e) => update("content_ja", e.target.value)}
               rows={4}
@@ -105,8 +113,9 @@ export default function NewReviewPage() {
 
           {/* Content KO */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">리뷰 내용 (한국어)</label>
+            <label htmlFor="review-content-ko" className="block text-sm font-medium text-gray-700 mb-1">리뷰 내용 (한국어)</label>
             <textarea
+              id="review-content-ko"
               value={form.content_ko}
               onChange={(e) => update("content_ko", e.target.value)}
               rows={4}
@@ -148,13 +157,12 @@ export default function NewReviewPage() {
           >
             {saving ? "등록 중..." : "리뷰 등록"}
           </button>
-          <button
-            type="button"
-            onClick={() => router.push("/reviews")}
+          <Link
+            href="/reviews"
             className="px-6 py-2.5 border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-50 transition text-sm"
           >
             취소
-          </button>
+          </Link>
         </div>
       </form>
     </AppShell>

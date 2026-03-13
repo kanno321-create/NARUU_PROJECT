@@ -10,6 +10,25 @@ settings = get_settings()
 
 CLAUDE_API_URL = "https://api.anthropic.com/v1/messages"
 
+# Module-level shared httpx client for connection pooling
+_http_client: httpx.AsyncClient | None = None
+
+
+def _get_http_client() -> httpx.AsyncClient:
+    """Return a shared httpx.AsyncClient, creating it on first use."""
+    global _http_client
+    if _http_client is None or _http_client.is_closed:
+        _http_client = httpx.AsyncClient(timeout=60.0)
+    return _http_client
+
+
+async def close_ai_http_client() -> None:
+    """Close the shared httpx client. Call on app shutdown."""
+    global _http_client
+    if _http_client is not None and not _http_client.is_closed:
+        await _http_client.aclose()
+        _http_client = None
+
 
 class AIService:
     """Handles Claude API interactions."""
@@ -86,16 +105,16 @@ class AIService:
         if system_prompt:
             body["system"] = system_prompt
 
-        async with httpx.AsyncClient(timeout=60.0) as client:
-            resp = await client.post(
-                CLAUDE_API_URL,
-                headers=self._headers,
-                json=body,
-            )
-            if resp.status_code == 200:
-                data = resp.json()
-                return data["content"][0]["text"]
-            return None
+        client = _get_http_client()
+        resp = await client.post(
+            CLAUDE_API_URL,
+            headers=self._headers,
+            json=body,
+        )
+        if resp.status_code == 200:
+            data = resp.json()
+            return data["content"][0]["text"]
+        return None
 
     async def translate(
         self,

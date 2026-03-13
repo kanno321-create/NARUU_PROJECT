@@ -1,6 +1,7 @@
 """Dashboard: KPI aggregation, chart data, AI business insights."""
 
-from datetime import datetime, timedelta
+import asyncio
+from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
@@ -88,7 +89,7 @@ class ChartDataResponse(BaseModel):
 
 def _month_range(offset: int = 0):
     """Return (start, end) of a month. offset=0 → current, -1 → last month."""
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     year = now.year
     month = now.month + offset
     while month <= 0:
@@ -117,93 +118,60 @@ async def get_kpi(
 ):
     this_start, this_end = _month_range(0)
     prev_start, prev_end = _month_range(-1)
+    yesterday = datetime.now(timezone.utc) - timedelta(days=1)
 
-    # Revenue (orders)
-    async def sum_revenue(start, end):
+    # Helper coroutines for gather
+    async def _sum_revenue(start, end):
         q = select(func.coalesce(func.sum(Order.total_amount), 0)).where(
             and_(Order.created_at >= start, Order.created_at < end)
         )
         return float((await db.execute(q)).scalar())
 
-    monthly_revenue = await sum_revenue(this_start, this_end)
-    prev_monthly_revenue = await sum_revenue(prev_start, prev_end)
+    async def _count(model_col, *filters):
+        q = select(func.count(model_col)).where(*filters) if filters else select(func.count(model_col))
+        return (await db.execute(q)).scalar() or 0
+
+    # Run ALL independent queries in parallel
+    (
+        monthly_revenue,
+        prev_monthly_revenue,
+        new_customers,
+        prev_customers,
+        reservations,
+        prev_reservations,
+        content_pub,
+        prev_content,
+        total_customers,
+        active_packages,
+        active_routes,
+        pending_reservations,
+        unread_messages,
+        avg_review,
+    ) = await asyncio.gather(
+        _sum_revenue(this_start, this_end),
+        _sum_revenue(prev_start, prev_end),
+        _count(Customer.id, and_(Customer.created_at >= this_start, Customer.created_at < this_end)),
+        _count(Customer.id, and_(Customer.created_at >= prev_start, Customer.created_at < prev_end)),
+        _count(Reservation.id, and_(Reservation.created_at >= this_start, Reservation.created_at < this_end)),
+        _count(Reservation.id, and_(Reservation.created_at >= prev_start, Reservation.created_at < prev_end)),
+        _count(Content.id, and_(Content.created_at >= this_start, Content.created_at < this_end, Content.status == "published")),
+        _count(Content.id, and_(Content.created_at >= prev_start, Content.created_at < prev_end, Content.status == "published")),
+        _count(Customer.id),
+        _count(Package.id, Package.is_active == True),
+        _count(TourRoute.id, TourRoute.status != "archived"),
+        _count(Reservation.id, Reservation.status == ReservationStatus.PENDING),
+        _count(LineMessage.id, and_(LineMessage.direction == "in", LineMessage.created_at >= yesterday)),
+        db.execute(select(func.avg(Review.sentiment_score))),
+    )
+
+    # avg_review is a Result object from gather; extract scalar
+    avg_review_val = avg_review.scalar() if hasattr(avg_review, 'scalar') else avg_review
+
     revenue_change_pct = (
         round((monthly_revenue - prev_monthly_revenue) / prev_monthly_revenue * 100, 1)
         if prev_monthly_revenue > 0
         else 0
     )
-
-    # New customers
-    async def count_new_customers(start, end):
-        q = select(func.count(Customer.id)).where(
-            and_(Customer.created_at >= start, Customer.created_at < end)
-        )
-        return (await db.execute(q)).scalar() or 0
-
-    new_customers = await count_new_customers(this_start, this_end)
-    prev_customers = await count_new_customers(prev_start, prev_end)
-
-    # Reservations
-    async def count_reservations(start, end):
-        q = select(func.count(Reservation.id)).where(
-            and_(Reservation.created_at >= start, Reservation.created_at < end)
-        )
-        return (await db.execute(q)).scalar() or 0
-
-    reservations = await count_reservations(this_start, this_end)
-    prev_reservations = await count_reservations(prev_start, prev_end)
-
-    # Content published
-    async def count_content(start, end):
-        q = select(func.count(Content.id)).where(
-            and_(
-                Content.created_at >= start,
-                Content.created_at < end,
-                Content.status == "published",
-            )
-        )
-        return (await db.execute(q)).scalar() or 0
-
-    content_pub = await count_content(this_start, this_end)
-    prev_content = await count_content(prev_start, prev_end)
-
-    # Totals
-    total_customers = (await db.execute(select(func.count(Customer.id)))).scalar() or 0
-    active_packages = (
-        await db.execute(
-            select(func.count(Package.id)).where(Package.is_active == True)
-        )
-    ).scalar() or 0
-    active_routes = (
-        await db.execute(
-            select(func.count(TourRoute.id)).where(TourRoute.status != "archived")
-        )
-    ).scalar() or 0
-    pending_reservations = (
-        await db.execute(
-            select(func.count(Reservation.id)).where(
-                Reservation.status == ReservationStatus.PENDING
-            )
-        )
-    ).scalar() or 0
-
-    # Unread LINE messages (incoming, last 24h)
-    yesterday = datetime.utcnow() - timedelta(days=1)
-    unread_messages = (
-        await db.execute(
-            select(func.count(LineMessage.id)).where(
-                and_(
-                    LineMessage.direction == "in",
-                    LineMessage.created_at >= yesterday,
-                )
-            )
-        )
-    ).scalar() or 0
-
-    # Average review score
-    avg_review = (
-        await db.execute(select(func.avg(Review.sentiment_score)))
-    ).scalar()
 
     return KPIResponse(
         monthly_revenue=monthly_revenue,
@@ -223,7 +191,7 @@ async def get_kpi(
         active_routes=active_routes,
         pending_reservations=pending_reservations,
         unread_messages=unread_messages,
-        avg_review_score=round(avg_review, 2) if avg_review else None,
+        avg_review_score=round(avg_review_val, 2) if avg_review_val else None,
     )
 
 
@@ -237,18 +205,31 @@ async def get_chart_data(
     db: AsyncSession = Depends(get_db),
     _user: User = Depends(get_current_user),
 ):
-    # Revenue trend (last 6 months)
+    # Revenue trend (last 6 months) — single GROUP BY query
+    six_months_ago_start, _ = _month_range(-5)
+    _, current_month_end = _month_range(0)
+
+    revenue_q = (
+        select(
+            extract("year", Order.created_at).label("yr"),
+            extract("month", Order.created_at).label("mo"),
+            func.coalesce(func.sum(Order.total_amount), 0),
+        )
+        .where(and_(Order.created_at >= six_months_ago_start, Order.created_at < current_month_end))
+        .group_by("yr", "mo")
+        .order_by("yr", "mo")
+    )
+    revenue_rows = (await db.execute(revenue_q)).all()
+    revenue_map = {(int(r[0]), int(r[1])): float(r[2]) for r in revenue_rows}
+
     revenue_trend = []
     for offset in range(-5, 1):
-        start, end = _month_range(offset)
-        q = select(func.coalesce(func.sum(Order.total_amount), 0)).where(
-            and_(Order.created_at >= start, Order.created_at < end)
-        )
-        total = float((await db.execute(q)).scalar())
+        start, _ = _month_range(offset)
+        key = (start.year, start.month)
         revenue_trend.append(
             RevenueChartItem(
                 month=start.strftime("%Y-%m"),
-                revenue=total,
+                revenue=revenue_map.get(key, 0.0),
             )
         )
 

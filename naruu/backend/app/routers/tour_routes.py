@@ -5,7 +5,7 @@ from typing import Optional
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -82,8 +82,7 @@ class RouteOut(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class RouteListResponse(BaseModel):
@@ -208,7 +207,7 @@ async def create_route(
         created_by=user.id,
     )
     db.add(route)
-    await db.commit()
+    await db.flush()
     await db.refresh(route)
     return RouteOut.model_validate(route)
 
@@ -235,7 +234,7 @@ async def update_route(
     for key, value in update_data.items():
         setattr(route, key, value)
 
-    await db.commit()
+    await db.flush()
     await db.refresh(route)
     return RouteOut.model_validate(route)
 
@@ -252,7 +251,7 @@ async def delete_route(
         raise HTTPException(404, "Route not found")
 
     route.status = RouteStatus.ARCHIVED
-    await db.commit()
+    await db.flush()
     return {"message": "Route archived"}
 
 
@@ -452,7 +451,7 @@ async def calculate_route(
     route.total_distance_km = directions["total_distance_km"]
     route.total_duration_minutes = total_with_stay
 
-    await db.commit()
+    await db.flush()
     await db.refresh(route)
     return RouteOut.model_validate(route)
 

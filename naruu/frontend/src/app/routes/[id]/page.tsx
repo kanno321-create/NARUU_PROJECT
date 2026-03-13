@@ -13,17 +13,12 @@ import {
 import AppShell from "@/components/layout/app-shell";
 import { api } from "@/lib/api";
 import type { TourRoute, Waypoint } from "@/lib/types";
+import { WAYPOINT_CATEGORY_LABELS } from "@/lib/constants";
+import LoadingSpinner from "@/components/ui/loading-spinner";
+import ErrorBanner from "@/components/ui/error-banner";
 
 const DAEGU_CENTER = { lat: 35.8714, lng: 128.5964 };
 const MAP_STYLE = { width: "100%", height: "450px" };
-
-const CATEGORY_LABELS: Record<string, string> = {
-  tourism: "관광",
-  medical: "의료",
-  restaurant: "맛집",
-  hotel: "숙박",
-  shopping: "쇼핑",
-};
 
 export default function RouteDetailPage() {
   const params = useParams();
@@ -33,6 +28,7 @@ export default function RouteDetailPage() {
   const [mapsApiKey, setMapsApiKey] = useState("");
   const [directions, setDirections] = useState<google.maps.DirectionsResult | null>(null);
   const [selectedWp, setSelectedWp] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -89,8 +85,8 @@ export default function RouteDetailPage() {
     try {
       await api.delete(`/tour-routes/${params.id}`);
       router.push("/routes");
-    } catch (err) {
-      console.error("Delete failed:", err);
+    } catch {
+      setError("루트 보관에 실패했습니다.");
     }
   };
 
@@ -100,17 +96,16 @@ export default function RouteDetailPage() {
         `/tour-routes/${params.id}/calculate`
       );
       setRoute(updated);
-      alert("경로 계산 완료!");
-    } catch (err) {
-      console.error("Calculate failed:", err);
-      alert("경로 계산에 실패했습니다. Google Maps API 키를 확인하세요.");
+      setError(null);
+    } catch {
+      setError("경로 계산에 실패했습니다. Google Maps API 키를 확인하세요.");
     }
   };
 
   if (loading) {
     return (
       <AppShell>
-        <p className="text-gray-400">로딩 중...</p>
+        <LoadingSpinner text="루트 로딩 중..." />
       </AppShell>
     );
   }
@@ -153,6 +148,8 @@ export default function RouteDetailPage() {
           </button>
         </div>
       </div>
+
+      <ErrorBanner message={error} />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Map */}
@@ -271,7 +268,7 @@ export default function RouteDetailPage() {
                     <p className="text-xs text-gray-500">{wp.name_ja}</p>
                     <div className="flex gap-2 mt-1">
                       <span className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-xs">
-                        {CATEGORY_LABELS[wp.category] || wp.category}
+                        {WAYPOINT_CATEGORY_LABELS[wp.category] || wp.category}
                       </span>
                       <span className="text-xs text-gray-400">
                         체류 {wp.stay_minutes}분

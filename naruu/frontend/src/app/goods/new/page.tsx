@@ -2,13 +2,16 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import AppShell from "@/components/layout/app-shell";
 import { api } from "@/lib/api";
 import type { GoodsItem, GoodsCategory } from "@/lib/types";
+import ErrorBanner from "@/components/ui/error-banner";
 
 export default function NewGoodsPage() {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState({
     name_ko: "",
     name_ja: "",
@@ -26,11 +29,11 @@ export default function NewGoodsPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!form.name_ko.trim() || !form.name_ja.trim()) {
-      alert("상품명(한/일)을 모두 입력하세요.");
+      setError("상품명(한/일)을 모두 입력하세요.");
       return;
     }
     if (!form.price || parseFloat(form.price) <= 0) {
-      alert("올바른 가격을 입력하세요.");
+      setError("올바른 가격을 입력하세요.");
       return;
     }
 
@@ -49,7 +52,7 @@ export default function NewGoodsPage() {
       const created = await api.post<GoodsItem>("/goods", body);
       router.push(`/goods/${created.id}`);
     } catch (e) {
-      alert("등록 실패: " + (e instanceof Error ? e.message : "알 수 없는 오류"));
+      setError("등록 실패: " + (e instanceof Error ? e.message : "알 수 없는 오류"));
     } finally {
       setSaving(false);
     }
@@ -58,11 +61,13 @@ export default function NewGoodsPage() {
   return (
     <AppShell>
       <div className="flex items-center gap-3 mb-6">
-        <button onClick={() => router.push("/goods")} className="text-gray-400 hover:text-gray-600">
-          ← 목록
-        </button>
+        <Link href="/goods" className="text-gray-400 hover:text-gray-600">
+          &larr; 목록
+        </Link>
         <h2 className="text-2xl font-bold text-gray-800">상품 등록</h2>
       </div>
+
+      <ErrorBanner message={error} />
 
       <form onSubmit={handleSubmit} className="max-w-2xl space-y-6">
         <div className="bg-white rounded-xl p-6 shadow-sm space-y-4">
@@ -72,7 +77,7 @@ export default function NewGoodsPage() {
               <input type="text" value={form.name_ko} onChange={(e) => update("name_ko", e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" required />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">商品名 (日本語) *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">상품명 (일본어) *</label>
               <input type="text" value={form.name_ja} onChange={(e) => update("name_ja", e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" required />
             </div>
           </div>
@@ -101,7 +106,7 @@ export default function NewGoodsPage() {
             <textarea value={form.description_ko} onChange={(e) => update("description_ko", e.target.value)} rows={3} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm resize-y" />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">説明 (日本語)</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">설명 (일본어)</label>
             <textarea value={form.description_ja} onChange={(e) => update("description_ja", e.target.value)} rows={3} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm resize-y" />
           </div>
         </div>
@@ -110,9 +115,9 @@ export default function NewGoodsPage() {
           <button type="submit" disabled={saving} className="px-6 py-2.5 bg-naruu-600 text-white rounded-lg hover:bg-naruu-700 disabled:opacity-50 transition font-medium text-sm">
             {saving ? "등록 중..." : "상품 등록"}
           </button>
-          <button type="button" onClick={() => router.push("/goods")} className="px-6 py-2.5 border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-50 transition text-sm">
+          <Link href="/goods" className="px-6 py-2.5 border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-50 transition text-sm">
             취소
-          </button>
+          </Link>
         </div>
       </form>
     </AppShell>

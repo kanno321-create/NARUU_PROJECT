@@ -2,9 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
 import AppShell from "@/components/layout/app-shell";
 import { api } from "@/lib/api";
 import type { Package, PackageCategory, CurrencyType } from "@/lib/types";
+import LoadingSpinner from "@/components/ui/loading-spinner";
+import ErrorBanner from "@/components/ui/error-banner";
 
 const CATEGORIES: { value: PackageCategory; label: string }[] = [
   { value: "medical", label: "의료" },
@@ -18,6 +21,7 @@ export default function EditPackagePage() {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [includeInput, setIncludeInput] = useState("");
 
   const [form, setForm] = useState({
@@ -79,9 +83,8 @@ export default function EditPackagePage() {
     try {
       await api.put(`/packages/${params.id}`, form);
       router.push(`/packages/${params.id}`);
-    } catch (err) {
-      console.error("Failed to update:", err);
-      alert("패키지 수정에 실패했습니다.");
+    } catch {
+      setError("패키지 수정에 실패했습니다.");
     } finally {
       setSaving(false);
     }
@@ -90,14 +93,19 @@ export default function EditPackagePage() {
   if (loading) {
     return (
       <AppShell>
-        <p className="text-gray-400">로딩 중...</p>
+        <LoadingSpinner text="패키지 로딩 중..." />
       </AppShell>
     );
   }
 
   return (
     <AppShell>
-      <h2 className="text-2xl font-bold text-gray-800 mb-6">패키지 수정</h2>
+      <Link href={`/packages/${params.id}`} className="text-sm text-naruu-600 hover:underline">
+        &larr; 패키지 상세
+      </Link>
+      <h2 className="text-2xl font-bold text-gray-800 mt-2 mb-6">패키지 수정</h2>
+
+      <ErrorBanner message={error} />
 
       <form onSubmit={handleSubmit} className="max-w-2xl space-y-6">
         <div className="bg-white rounded-xl p-6 shadow-sm space-y-4">
@@ -231,13 +239,12 @@ export default function EditPackagePage() {
           >
             {saving ? "저장 중..." : "수정 저장"}
           </button>
-          <button
-            type="button"
-            onClick={() => router.push(`/packages/${params.id}`)}
+          <Link
+            href={`/packages/${params.id}`}
             className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition text-sm"
           >
             취소
-          </button>
+          </Link>
         </div>
       </form>
     </AppShell>

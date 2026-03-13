@@ -1,5 +1,6 @@
 """Customer CRUD + search + journey timeline routes."""
 
+import asyncio
 from datetime import date, datetime
 from typing import Optional
 
@@ -74,7 +75,7 @@ class CustomerListResponse(BaseModel):
     items: list[CustomerResponse]
     total: int
     page: int
-    page_size: int
+    per_page: int
 
 
 class JourneyEvent(BaseModel):
@@ -89,8 +90,8 @@ class JourneyEvent(BaseModel):
 
 class CustomerDetailResponse(CustomerResponse):
     """Customer detail with journey timeline."""
-    journey: list[JourneyEvent]
-    stats: dict
+    journey: list[JourneyEvent] = []
+    stats: dict = {}
 
 
 # ── Endpoints ────────────────────────────────────
@@ -99,7 +100,7 @@ class CustomerDetailResponse(CustomerResponse):
 @router.get("", response_model=CustomerListResponse)
 async def list_customers(
     page: int = Query(1, ge=1),
-    page_size: int = Query(20, ge=1, le=100),
+    per_page: int = Query(20, ge=1, le=100),
     search: str | None = Query(None, description="이름/이메일/LINE ID 검색"),
     tag: str | None = Query(None, description="태그 필터"),
     _: User = Depends(get_current_user),
@@ -129,7 +130,7 @@ async def list_customers(
 
     # Paginate
     query = query.order_by(Customer.created_at.desc())
-    query = query.offset((page - 1) * page_size).limit(page_size)
+    query = query.offset((page - 1) * per_page).limit(per_page)
 
     result = await db.execute(query)
     items = result.scalars().all()
@@ -138,7 +139,7 @@ async def list_customers(
         items=[CustomerResponse.model_validate(c) for c in items],
         total=total,
         page=page,
-        page_size=page_size,
+        per_page=per_page,
     )
 
 
@@ -182,8 +183,10 @@ async def get_customer(
             detail="고객을 찾을 수 없습니다",
         )
 
-    journey = await _build_journey(db, customer_id)
-    stats = await _build_stats(db, customer_id)
+    journey, stats = await asyncio.gather(
+        _build_journey(db, customer_id),
+        _build_stats(db, customer_id),
+    )
 
     resp = CustomerDetailResponse.model_validate(customer)
     resp.journey = journey
@@ -241,15 +244,34 @@ async def delete_customer(
 
 async def _build_journey(db: AsyncSession, customer_id: int) -> list[JourneyEvent]:
     """Build timeline of all customer interactions."""
+    # Run all 4 independent queries in parallel
+    res_result, ord_result, rev_result, msg_result = await asyncio.gather(
+        db.execute(
+            select(Reservation)
+            .where(Reservation.customer_id == customer_id)
+            .order_by(Reservation.reservation_date.desc())
+        ),
+        db.execute(
+            select(Order)
+            .where(Order.customer_id == customer_id)
+            .order_by(Order.created_at.desc())
+        ),
+        db.execute(
+            select(Review)
+            .where(Review.customer_id == customer_id)
+            .order_by(Review.created_at.desc())
+        ),
+        db.execute(
+            select(LineMessage)
+            .where(LineMessage.customer_id == customer_id)
+            .order_by(LineMessage.created_at.desc())
+            .limit(20)
+        ),
+    )
+
     events: list[JourneyEvent] = []
 
-    # Reservations
-    reservations = await db.execute(
-        select(Reservation)
-        .where(Reservation.customer_id == customer_id)
-        .order_by(Reservation.reservation_date.desc())
-    )
-    for r in reservations.scalars():
+    for r in res_result.scalars():
         events.append(JourneyEvent(
             id=r.id,
             event_type="reservation",
@@ -259,13 +281,7 @@ async def _build_journey(db: AsyncSession, customer_id: int) -> list[JourneyEven
             date=r.reservation_date,
         ))
 
-    # Orders
-    orders = await db.execute(
-        select(Order)
-        .where(Order.customer_id == customer_id)
-        .order_by(Order.created_at.desc())
-    )
-    for o in orders.scalars():
+    for o in ord_result.scalars():
         events.append(JourneyEvent(
             id=o.id,
             event_type="order",
@@ -275,13 +291,7 @@ async def _build_journey(db: AsyncSession, customer_id: int) -> list[JourneyEven
             date=o.created_at,
         ))
 
-    # Reviews
-    reviews = await db.execute(
-        select(Review)
-        .where(Review.customer_id == customer_id)
-        .order_by(Review.created_at.desc())
-    )
-    for rv in reviews.scalars():
+    for rv in rev_result.scalars():
         events.append(JourneyEvent(
             id=rv.id,
             event_type="review",
@@ -291,14 +301,7 @@ async def _build_journey(db: AsyncSession, customer_id: int) -> list[JourneyEven
             date=rv.created_at,
         ))
 
-    # LINE messages (last 20)
-    messages = await db.execute(
-        select(LineMessage)
-        .where(LineMessage.customer_id == customer_id)
-        .order_by(LineMessage.created_at.desc())
-        .limit(20)
-    )
-    for m in messages.scalars():
+    for m in msg_result.scalars():
         direction = "수신" if m.direction.value == "in" else "발신"
         ai_tag = " [AI]" if m.ai_generated else ""
         events.append(JourneyEvent(
@@ -317,32 +320,29 @@ async def _build_journey(db: AsyncSession, customer_id: int) -> list[JourneyEven
 
 async def _build_stats(db: AsyncSession, customer_id: int) -> dict:
     """Build customer stats summary."""
-    # Total orders + revenue
-    order_result = await db.execute(
-        select(func.count(), func.coalesce(func.sum(Order.total_amount), 0))
-        .where(Order.customer_id == customer_id)
+    # Run all 4 independent queries in parallel
+    order_result, res_result, rev_result, msg_result = await asyncio.gather(
+        db.execute(
+            select(func.count(), func.coalesce(func.sum(Order.total_amount), 0))
+            .where(Order.customer_id == customer_id)
+        ),
+        db.execute(
+            select(func.count())
+            .where(Reservation.customer_id == customer_id)
+        ),
+        db.execute(
+            select(func.count())
+            .where(Review.customer_id == customer_id)
+        ),
+        db.execute(
+            select(func.count())
+            .where(LineMessage.customer_id == customer_id)
+        ),
     )
+
     order_count, total_revenue = order_result.one()
-
-    # Reservation count
-    res_result = await db.execute(
-        select(func.count())
-        .where(Reservation.customer_id == customer_id)
-    )
     reservation_count = res_result.scalar() or 0
-
-    # Review count
-    rev_result = await db.execute(
-        select(func.count())
-        .where(Review.customer_id == customer_id)
-    )
     review_count = rev_result.scalar() or 0
-
-    # LINE message count
-    msg_result = await db.execute(
-        select(func.count())
-        .where(LineMessage.customer_id == customer_id)
-    )
     message_count = msg_result.scalar() or 0
 
     return {

@@ -4,19 +4,12 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import AppShell from "@/components/layout/app-shell";
 import { api } from "@/lib/api";
-import type { GoodsItem, GoodsListResponse, GoodsStats, GoodsCategory } from "@/lib/types";
-
-const CAT_LABELS: Record<GoodsCategory, string> = {
-  bag: "가방",
-  accessory: "액세서리",
-  souvenir: "기념품",
-};
-
-const CAT_COLORS: Record<GoodsCategory, string> = {
-  bag: "bg-indigo-100 text-indigo-700",
-  accessory: "bg-pink-100 text-pink-700",
-  souvenir: "bg-amber-100 text-amber-700",
-};
+import type { GoodsItem, GoodsListResponse, GoodsStats } from "@/lib/types";
+import { CAT_LABELS, CAT_COLORS } from "@/lib/constants";
+import Pagination from "@/components/ui/pagination";
+import LoadingSpinner from "@/components/ui/loading-spinner";
+import ErrorBanner from "@/components/ui/error-banner";
+import SearchFilter from "@/components/ui/search-filter";
 
 export default function GoodsPage() {
   const [goods, setGoods] = useState<GoodsItem[]>([]);
@@ -24,6 +17,7 @@ export default function GoodsPage() {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [catFilter, setCatFilter] = useState<string>("");
   const [search, setSearch] = useState("");
   const [lowStock, setLowStock] = useState(false);
@@ -37,7 +31,9 @@ export default function GoodsPage() {
     try {
       const data = await api.get<GoodsStats>("/goods/stats");
       setStats(data);
-    } catch (e) { console.error(e); }
+    } catch {
+      setError("통계를 불러오는데 실패했습니다.");
+    }
   }
 
   async function loadGoods() {
@@ -53,8 +49,12 @@ export default function GoodsPage() {
       const data = await api.get<GoodsListResponse>(`/goods?${params}`);
       setGoods(data.items);
       setTotal(data.total);
-    } catch (e) { console.error(e); }
-    finally { setLoading(false); }
+      setError(null);
+    } catch {
+      setError("상품을 불러오는데 실패했습니다.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   const totalPages = Math.ceil(total / perPage);
@@ -76,6 +76,8 @@ export default function GoodsPage() {
           + 상품 등록
         </Link>
       </div>
+
+      <ErrorBanner message={error} />
 
       {/* Stats */}
       {stats && (
@@ -106,29 +108,29 @@ export default function GoodsPage() {
       {/* Filters */}
       <div className="bg-white rounded-xl p-4 shadow-sm mb-4">
         <div className="flex flex-wrap gap-3 items-center">
-          <input
-            type="text"
+          <SearchFilter
+            searchValue={search}
+            onSearch={(v) => { setSearch(v); setPage(1); }}
             placeholder="상품명 검색..."
-            value={search}
-            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-            className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-naruu-500 focus:border-transparent w-64"
+            filters={[{
+              value: catFilter,
+              onChange: (v) => { setCatFilter(v); setPage(1); },
+              options: [
+                { value: "bag", label: "가방" },
+                { value: "accessory", label: "액세서리" },
+                { value: "souvenir", label: "기념품" },
+              ],
+              placeholder: "전체 카테고리",
+              ariaLabel: "카테고리 필터",
+            }]}
           />
-          <select
-            value={catFilter}
-            onChange={(e) => { setCatFilter(e.target.value); setPage(1); }}
-            className="px-3 py-2 border border-gray-200 rounded-lg text-sm"
-          >
-            <option value="">전체 카테고리</option>
-            <option value="bag">가방</option>
-            <option value="accessory">액세서리</option>
-            <option value="souvenir">기념품</option>
-          </select>
           <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
             <input
               type="checkbox"
               checked={lowStock}
               onChange={(e) => { setLowStock(e.target.checked); setPage(1); }}
               className="rounded"
+              aria-label="재고 부족 상품만 보기"
             />
             재고 부족만
           </label>
@@ -138,7 +140,7 @@ export default function GoodsPage() {
       {/* Products Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {loading ? (
-          <div className="col-span-full text-center py-8 text-gray-400">로딩 중...</div>
+          <div className="col-span-full"><LoadingSpinner /></div>
         ) : goods.length === 0 ? (
           <div className="col-span-full text-center py-8 text-gray-400">등록된 상품이 없습니다.</div>
         ) : (
@@ -155,7 +157,7 @@ export default function GoodsPage() {
                   {g.image_urls && g.image_urls.length > 0 ? (
                     <img src={g.image_urls[0]} alt={g.name_ko} className="h-full w-full object-cover" />
                   ) : (
-                    <span className="text-4xl">🛍️</span>
+                    <span className="text-4xl" aria-hidden="true">🛍️</span>
                   )}
                 </div>
                 <div className="p-4">
@@ -180,16 +182,7 @@ export default function GoodsPage() {
         )}
       </div>
 
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between mt-4">
-          <p className="text-xs text-gray-500">전체 {total}건</p>
-          <div className="flex gap-1">
-            <button onClick={() => setPage(page - 1)} disabled={page <= 1} className="px-3 py-1 text-sm border rounded disabled:opacity-30">이전</button>
-            <button onClick={() => setPage(page + 1)} disabled={page >= totalPages} className="px-3 py-1 text-sm border rounded disabled:opacity-30">다음</button>
-          </div>
-        </div>
-      )}
+      <Pagination page={page} totalPages={totalPages} onPageChange={setPage} total={total} perPage={perPage} unit="개" />
     </AppShell>
   );
 }

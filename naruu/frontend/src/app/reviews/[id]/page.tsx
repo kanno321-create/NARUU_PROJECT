@@ -2,25 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
 import AppShell from "@/components/layout/app-shell";
 import { api } from "@/lib/api";
 import type { Review, ReviewPlatform } from "@/lib/types";
-
-const PLATFORM_LABELS: Record<ReviewPlatform, string> = {
-  google: "Google",
-  instagram: "Instagram",
-  line: "LINE",
-  naver: "Naver",
-  tabelog: "食べログ",
-};
-
-const PLATFORM_COLORS: Record<ReviewPlatform, string> = {
-  google: "bg-blue-100 text-blue-700",
-  instagram: "bg-pink-100 text-pink-700",
-  line: "bg-green-100 text-green-700",
-  naver: "bg-emerald-100 text-emerald-700",
-  tabelog: "bg-orange-100 text-orange-700",
-};
+import { PLATFORM_LABELS, PLATFORM_COLORS } from "@/lib/constants";
+import LoadingSpinner from "@/components/ui/loading-spinner";
+import ErrorBanner from "@/components/ui/error-banner";
 
 function sentimentDisplay(score: number | null) {
   if (score === null) return { label: "미분석", emoji: "❓", color: "text-gray-400", bg: "bg-gray-100" };
@@ -41,6 +29,7 @@ export default function ReviewDetailPage() {
   const [generatedResponse, setGeneratedResponse] = useState<string | null>(null);
   const [responseText, setResponseText] = useState("");
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     loadReview();
@@ -64,7 +53,7 @@ export default function ReviewDetailPage() {
       const updated = await api.post<Review>(`/reviews/${reviewId}/analyze`);
       setReview(updated);
     } catch (e) {
-      alert("감성 분석 실패: " + (e instanceof Error ? e.message : "알 수 없는 오류"));
+      setError("감성 분석 실패: " + (e instanceof Error ? e.message : "알 수 없는 오류"));
     } finally {
       setAnalyzing(false);
     }
@@ -77,7 +66,7 @@ export default function ReviewDetailPage() {
       setGeneratedResponse(data.response);
       setResponseText(data.response);
     } catch (e) {
-      alert("응답 생성 실패: " + (e instanceof Error ? e.message : "알 수 없는 오류"));
+      setError("응답 생성 실패: " + (e instanceof Error ? e.message : "알 수 없는 오류"));
     } finally {
       setGenerating(false);
     }
@@ -93,7 +82,7 @@ export default function ReviewDetailPage() {
       setReview(updated);
       setGeneratedResponse(null);
     } catch (e) {
-      alert("저장 실패: " + (e instanceof Error ? e.message : "알 수 없는 오류"));
+      setError("저장 실패: " + (e instanceof Error ? e.message : "알 수 없는 오류"));
     } finally {
       setSaving(false);
     }
@@ -102,7 +91,7 @@ export default function ReviewDetailPage() {
   if (loading) {
     return (
       <AppShell>
-        <div className="flex items-center justify-center py-20 text-gray-400">로딩 중...</div>
+        <LoadingSpinner text="리뷰 로딩 중..." />
       </AppShell>
     );
   }
@@ -114,14 +103,16 @@ export default function ReviewDetailPage() {
   return (
     <AppShell>
       <div className="flex items-center gap-3 mb-6">
-        <button onClick={() => router.push("/reviews")} className="text-gray-400 hover:text-gray-600">
-          ← 목록
-        </button>
+        <Link href="/reviews" className="text-gray-400 hover:text-gray-600">
+          &larr; 목록
+        </Link>
         <h2 className="text-2xl font-bold text-gray-800">리뷰 상세</h2>
         <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${PLATFORM_COLORS[review.platform]}`}>
           {PLATFORM_LABELS[review.platform]}
         </span>
       </div>
+
+      <ErrorBanner message={error} />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left: Review Content */}
@@ -131,7 +122,7 @@ export default function ReviewDetailPage() {
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold text-gray-700">리뷰 내용</h3>
               {review.rating && (
-                <span className="text-yellow-500 font-bold text-lg">{review.rating.toFixed(1)} ★</span>
+                <span className="text-yellow-500 font-bold text-lg">{review.rating.toFixed(1)} <span aria-hidden="true">★</span></span>
               )}
             </div>
 
@@ -182,6 +173,7 @@ export default function ReviewDetailPage() {
               value={responseText}
               onChange={(e) => setResponseText(e.target.value)}
               rows={6}
+              aria-label="리뷰 응답 내용"
               placeholder="리뷰에 대한 응답을 입력하세요..."
               className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-naruu-500 focus:border-transparent resize-y"
             />
@@ -204,7 +196,7 @@ export default function ReviewDetailPage() {
           <div className={`rounded-xl p-6 shadow-sm ${sentiment.bg}`}>
             <h3 className="font-semibold text-gray-700 mb-3">AI 감성 분석</h3>
             <div className="text-center py-4">
-              <span className="text-5xl">{sentiment.emoji}</span>
+              <span className="text-5xl" aria-hidden="true">{sentiment.emoji}</span>
               <p className={`text-lg font-bold mt-2 ${sentiment.color}`}>{sentiment.label}</p>
               {review.sentiment_score !== null && (
                 <>

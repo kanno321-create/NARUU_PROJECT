@@ -3,7 +3,7 @@
 from datetime import date, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import func, select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -66,8 +66,7 @@ class PartnerOut(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class PartnerListResponse(BaseModel):
@@ -270,7 +269,7 @@ async def create_partner(
 
     partner = Partner(**data.model_dump())
     db.add(partner)
-    await db.commit()
+    await db.flush()
     await db.refresh(partner)
     return PartnerOut.model_validate(partner)
 
@@ -299,7 +298,7 @@ async def update_partner(
     for key, value in update_data.items():
         setattr(partner, key, value)
 
-    await db.commit()
+    await db.flush()
     await db.refresh(partner)
     return PartnerOut.model_validate(partner)
 
@@ -317,7 +316,7 @@ async def delete_partner(
 
     # Soft delete
     partner.is_active = False
-    await db.commit()
+    await db.flush()
     return {"message": "Partner deactivated"}
 
 

@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import AppShell from "@/components/layout/app-shell";
 import { api } from "@/lib/api";
 import type { ContentSeries, ContentPlatform, ContentCreate } from "@/lib/types";
+import ErrorBanner from "@/components/ui/error-banner";
 
 const SERIES_OPTIONS: { value: ContentSeries; label: string }[] = [
   { value: "DaeguTour", label: "대구투어" },
@@ -22,6 +24,7 @@ const PLATFORM_OPTIONS: { value: ContentPlatform; label: string }[] = [
 export default function NewContentPage() {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const [form, setForm] = useState<ContentCreate>({
     title: "",
@@ -62,7 +65,7 @@ export default function NewContentPage() {
         script_ko: data.script_ko,
       }));
     } catch {
-      alert("AI 스크립트 생성에 실패했습니다.");
+      setError("AI 스크립트 생성에 실패했습니다.");
     } finally {
       setAiLoading(false);
     }
@@ -77,9 +80,8 @@ export default function NewContentPage() {
       if (!body.platform) delete body.platform;
       await api.post("/content", body);
       router.push("/content");
-    } catch (err) {
-      console.error("Failed to create content:", err);
-      alert("콘텐츠 생성에 실패했습니다.");
+    } catch {
+      setError("콘텐츠 생성에 실패했습니다.");
     } finally {
       setSaving(false);
     }
@@ -87,7 +89,10 @@ export default function NewContentPage() {
 
   return (
     <AppShell>
-      <h2 className="text-2xl font-bold text-gray-800 mb-6">새 콘텐츠 등록</h2>
+      <Link href="/content" className="text-sm text-naruu-600 hover:underline">&larr; 목록</Link>
+      <h2 className="text-2xl font-bold text-gray-800 mt-2 mb-6">새 콘텐츠 등록</h2>
+
+      <ErrorBanner message={error} />
 
       <form onSubmit={handleSubmit} className="max-w-3xl space-y-6">
         {/* Basic Info */}
@@ -240,13 +245,12 @@ export default function NewContentPage() {
           >
             {saving ? "저장 중..." : "콘텐츠 등록 (초안)"}
           </button>
-          <button
-            type="button"
-            onClick={() => router.push("/content")}
+          <Link
+            href="/content"
             className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm transition"
           >
             취소
-          </button>
+          </Link>
         </div>
       </form>
     </AppShell>

@@ -1,9 +1,9 @@
 """Review management: CRUD, AI sentiment analysis, AI response generation."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import func, select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -53,8 +53,7 @@ class ReviewOut(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ReviewListResponse(BaseModel):
@@ -121,16 +120,23 @@ async def review_stats(
     _user: User = Depends(get_current_user),
 ):
     """Review analytics overview."""
-    total = (await db.execute(select(func.count(Review.id)))).scalar() or 0
-    avg_rating = (await db.execute(select(func.avg(Review.rating)))).scalar()
-    avg_sentiment = (await db.execute(select(func.avg(Review.sentiment_score)))).scalar()
-    no_response = (
-        await db.execute(
-            select(func.count(Review.id)).where(Review.response_text.is_(None))
-        )
-    ).scalar() or 0
+    from sqlalchemy import case
 
-    # By platform
+    # Consolidated aggregation: total, avg_rating, avg_sentiment, no_response,
+    # and sentiment distribution in a single query
+    agg_q = select(
+        func.count(Review.id),
+        func.avg(Review.rating),
+        func.avg(Review.sentiment_score),
+        func.count(case((Review.response_text.is_(None), 1))),
+        func.count(case((Review.sentiment_score >= 0.7, 1))),
+        func.count(case((and_(Review.sentiment_score >= 0.4, Review.sentiment_score < 0.7), 1))),
+        func.count(case((Review.sentiment_score < 0.4, 1))),
+    )
+    agg_result = (await db.execute(agg_q)).one()
+    total, avg_rating, avg_sentiment, no_response, positive, neutral, negative = agg_result
+
+    # By platform (single GROUP BY query)
     platform_q = (
         select(Review.platform, func.count(Review.id), func.avg(Review.sentiment_score))
         .group_by(Review.platform)
@@ -144,25 +150,6 @@ async def review_stats(
         }
         for row in platform_result.all()
     ]
-
-    # Sentiment distribution
-    positive = (
-        await db.execute(
-            select(func.count(Review.id)).where(Review.sentiment_score >= 0.7)
-        )
-    ).scalar() or 0
-    neutral = (
-        await db.execute(
-            select(func.count(Review.id)).where(
-                and_(Review.sentiment_score >= 0.4, Review.sentiment_score < 0.7)
-            )
-        )
-    ).scalar() or 0
-    negative = (
-        await db.execute(
-            select(func.count(Review.id)).where(Review.sentiment_score < 0.4)
-        )
-    ).scalar() or 0
 
     return {
         "total": total,
@@ -199,7 +186,7 @@ async def create_review(
 ):
     review = Review(**data.model_dump())
     db.add(review)
-    await db.commit()
+    await db.flush()
     await db.refresh(review)
     return ReviewOut.model_validate(review)
 
@@ -218,12 +205,12 @@ async def update_review(
 
     update_data = data.model_dump(exclude_unset=True)
     if "response_text" in update_data and update_data["response_text"]:
-        update_data["responded_at"] = datetime.utcnow()
+        update_data["responded_at"] = datetime.now(timezone.utc)
 
     for key, value in update_data.items():
         setattr(review, key, value)
 
-    await db.commit()
+    await db.flush()
     await db.refresh(review)
     return ReviewOut.model_validate(review)
 
@@ -263,7 +250,7 @@ async def analyze_sentiment(
             score = float(reply.strip())
             score = max(0.0, min(1.0, score))
             review.sentiment_score = score
-            await db.commit()
+            await db.flush()
             await db.refresh(review)
         except ValueError:
             pass

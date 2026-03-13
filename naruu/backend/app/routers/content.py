@@ -1,11 +1,11 @@
 """Content management: CRUD, approval workflow, Make.com webhook trigger."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import func, select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -60,8 +60,7 @@ class ContentOut(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ContentListResponse(BaseModel):
@@ -153,7 +152,7 @@ async def create_content(
 ):
     content = Content(**data.model_dump(), status=ContentStatus.DRAFT)
     db.add(content)
-    await db.commit()
+    await db.flush()
     await db.refresh(content)
     return ContentOut.model_validate(content)
 
@@ -174,7 +173,7 @@ async def update_content(
     for key, value in update_data.items():
         setattr(content, key, value)
 
-    await db.commit()
+    await db.flush()
     await db.refresh(content)
     return ContentOut.model_validate(content)
 
@@ -191,7 +190,7 @@ async def delete_content(
         raise HTTPException(404, "Content not found")
 
     await db.delete(content)
-    await db.commit()
+    await db.flush()
     return {"message": "Content deleted"}
 
 
@@ -248,9 +247,9 @@ async def workflow_action(
 
     content.status = target_status
     if target_status == ContentStatus.PUBLISHED:
-        content.published_at = datetime.utcnow()
+        content.published_at = datetime.now(timezone.utc)
 
-    await db.commit()
+    await db.flush()
     await db.refresh(content)
     return ContentOut.model_validate(content)
 
@@ -381,15 +380,27 @@ async def content_stats(
     _user: User = Depends(get_current_user),
 ):
     """Get content pipeline overview stats."""
-    counts = {}
-    for status in ContentStatus:
-        q = select(func.count(Content.id)).where(Content.status == status)
-        counts[status.value] = (await db.execute(q)).scalar() or 0
+    # Single GROUP BY query for status counts
+    status_q = (
+        select(Content.status, func.count(Content.id))
+        .group_by(Content.status)
+    )
+    status_result = await db.execute(status_q)
+    counts = {row[0].value: row[1] for row in status_result.all()}
+    # Ensure all statuses are present
+    for s in ContentStatus:
+        counts.setdefault(s.value, 0)
 
-    series_counts = {}
-    for series in ContentSeries:
-        q = select(func.count(Content.id)).where(Content.series == series)
-        series_counts[series.value] = (await db.execute(q)).scalar() or 0
+    # Single GROUP BY query for series counts
+    series_q = (
+        select(Content.series, func.count(Content.id))
+        .group_by(Content.series)
+    )
+    series_result = await db.execute(series_q)
+    series_counts = {row[0].value: row[1] for row in series_result.all()}
+    # Ensure all series are present
+    for s in ContentSeries:
+        series_counts.setdefault(s.value, 0)
 
     return {
         "by_status": counts,

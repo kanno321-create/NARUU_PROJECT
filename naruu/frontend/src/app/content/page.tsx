@@ -7,39 +7,14 @@ import { api } from "@/lib/api";
 import type {
   Content,
   ContentListResponse,
-  ContentSeries,
   ContentStatus,
   ContentStats,
 } from "@/lib/types";
-
-const SERIES_LABELS: Record<ContentSeries, string> = {
-  DaeguTour: "대구투어",
-  JCouple: "J커플",
-  Medical: "의료",
-  Brochure: "브로슈어",
-};
-
-const STATUS_LABELS: Record<ContentStatus, string> = {
-  draft: "초안",
-  review: "검토 중",
-  approved: "승인됨",
-  published: "게시됨",
-  rejected: "반려",
-};
-
-const STATUS_COLORS: Record<ContentStatus, string> = {
-  draft: "bg-gray-100 text-gray-600",
-  review: "bg-amber-100 text-amber-700",
-  approved: "bg-green-100 text-green-700",
-  published: "bg-blue-100 text-blue-700",
-  rejected: "bg-red-100 text-red-600",
-};
-
-const PLATFORM_LABELS: Record<string, string> = {
-  youtube: "YouTube",
-  instagram: "Instagram",
-  tiktok: "TikTok",
-};
+import { SERIES_LABELS, CONTENT_STATUS_LABELS, CONTENT_STATUS_COLORS, CONTENT_PLATFORM_LABELS } from "@/lib/constants";
+import Pagination from "@/components/ui/pagination";
+import LoadingSpinner from "@/components/ui/loading-spinner";
+import ErrorBanner from "@/components/ui/error-banner";
+import SearchFilter from "@/components/ui/search-filter";
 
 export default function ContentPage() {
   const [contents, setContents] = useState<Content[]>([]);
@@ -51,6 +26,7 @@ export default function ContentPage() {
   const [statusFilter, setStatusFilter] = useState("");
   const [stats, setStats] = useState<ContentStats | null>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchContents = useCallback(async () => {
     setLoading(true);
@@ -67,8 +43,9 @@ export default function ContentPage() {
       );
       setContents(data.items);
       setTotal(data.total);
-    } catch (err) {
-      console.error("Failed to fetch content:", err);
+      setError(null);
+    } catch {
+      setError("데이터를 불러오는데 실패했습니다.");
     } finally {
       setLoading(false);
     }
@@ -107,6 +84,8 @@ export default function ContentPage() {
         </Link>
       </div>
 
+      <ErrorBanner message={error} />
+
       {/* Pipeline Stats */}
       {stats && (
         <div className="grid grid-cols-5 gap-3 mb-6">
@@ -118,49 +97,43 @@ export default function ContentPage() {
                   setStatusFilter(statusFilter === s ? "" : s);
                   setPage(1);
                 }}
+                aria-pressed={statusFilter === s}
                 className={`rounded-xl p-3 text-center transition border ${
                   statusFilter === s
                     ? "border-naruu-400 ring-2 ring-naruu-200"
                     : "border-gray-100"
-                } ${STATUS_COLORS[s]} bg-opacity-50`}
+                } ${CONTENT_STATUS_COLORS[s]} bg-opacity-50`}
               >
                 <p className="text-xl font-bold">{stats.by_status[s] || 0}</p>
-                <p className="text-xs">{STATUS_LABELS[s]}</p>
+                <p className="text-xs">{CONTENT_STATUS_LABELS[s]}</p>
               </button>
             )
           )}
         </div>
       )}
 
-      {/* Search & Filters */}
-      <div className="flex gap-3 mb-4">
-        <input
-          type="text"
-          placeholder="콘텐츠 검색..."
-          value={searchInput}
-          onChange={(e) => setSearchInput(e.target.value)}
-          className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-naruu-500 outline-none text-sm"
-        />
-        <select
-          value={seriesFilter}
-          onChange={(e) => {
-            setSeriesFilter(e.target.value);
-            setPage(1);
-          }}
-          className="px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none"
-        >
-          <option value="">전체 시리즈</option>
-          <option value="DaeguTour">대구투어</option>
-          <option value="JCouple">J커플</option>
-          <option value="Medical">의료</option>
-          <option value="Brochure">브로슈어</option>
-        </select>
-      </div>
+      <SearchFilter
+        searchValue={searchInput}
+        onSearch={setSearchInput}
+        placeholder="콘텐츠 검색..."
+        filters={[{
+          value: seriesFilter,
+          onChange: (v) => { setSeriesFilter(v); setPage(1); },
+          options: [
+            { value: "DaeguTour", label: "대구투어" },
+            { value: "JCouple", label: "J커플" },
+            { value: "Medical", label: "의료" },
+            { value: "Brochure", label: "브로슈어" },
+          ],
+          placeholder: "전체 시리즈",
+          ariaLabel: "시리즈 필터",
+        }]}
+      />
 
       {/* Content Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {loading ? (
-          <div className="col-span-3 text-center py-12 text-gray-400">로딩 중...</div>
+          <div className="col-span-3"><LoadingSpinner /></div>
         ) : contents.length === 0 ? (
           <div className="col-span-3 text-center py-12 text-gray-400">
             {search || seriesFilter || statusFilter
@@ -185,7 +158,7 @@ export default function ContentPage() {
                 </div>
               ) : (
                 <div className="h-40 bg-gradient-to-br from-naruu-100 to-violet-100 flex items-center justify-center">
-                  <span className="text-4xl">
+                  <span className="text-4xl" aria-hidden="true">
                     {c.series === "DaeguTour"
                       ? "🏙️"
                       : c.series === "JCouple"
@@ -209,14 +182,14 @@ export default function ContentPage() {
                     {SERIES_LABELS[c.series]}
                   </span>
                   <span
-                    className={`px-2 py-0.5 rounded text-xs font-medium ${STATUS_COLORS[c.status]}`}
+                    className={`px-2 py-0.5 rounded text-xs font-medium ${CONTENT_STATUS_COLORS[c.status]}`}
                   >
-                    {STATUS_LABELS[c.status]}
+                    {CONTENT_STATUS_LABELS[c.status]}
                   </span>
                 </div>
 
                 <div className="flex items-center justify-between text-xs text-gray-400">
-                  <span>{c.platform ? PLATFORM_LABELS[c.platform] : "미지정"}</span>
+                  <span>{c.platform ? CONTENT_PLATFORM_LABELS[c.platform] : "미지정"}</span>
                   <span>{new Date(c.created_at).toLocaleDateString("ko-KR")}</span>
                 </div>
               </div>
@@ -225,28 +198,7 @@ export default function ContentPage() {
         )}
       </div>
 
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between mt-6">
-          <span className="text-xs text-gray-500">총 {total}개</span>
-          <div className="flex gap-1">
-            <button
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page === 1}
-              className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50"
-            >
-              이전
-            </button>
-            <button
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={page === totalPages}
-              className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50"
-            >
-              다음
-            </button>
-          </div>
-        </div>
-      )}
+      <Pagination page={page} totalPages={totalPages} onPageChange={setPage} total={total} unit="개" />
     </AppShell>
   );
 }

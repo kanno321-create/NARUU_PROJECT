@@ -284,12 +284,12 @@ async def create_public_estimate(
     except HTTPException:
         raise
     except Exception as e:
-        logger.exception(f"Public estimate error: {e}")
+        logger.exception(e)
         raise HTTPException(
             status_code=500,
             detail={
                 "code": "PUBLIC_ESTIMATE_ERROR",
-                "message": f"견적 생성 실패: {str(e)}",
+                "message": "Internal server error",
                 "traceId": str(uuid.uuid4()),
             },
         )
@@ -371,12 +371,12 @@ async def create_inquiry(
         raise
     except Exception as e:
         await db.rollback()
-        logger.exception(f"Inquiry creation error: {e}")
+        logger.exception(e)
         raise HTTPException(
             status_code=500,
             detail={
                 "code": "INQUIRY_ERROR",
-                "message": f"문의 접수 실패: {str(e)}",
+                "message": "Internal server error",
                 "traceId": str(uuid.uuid4()),
             },
         )

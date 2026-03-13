@@ -1350,8 +1350,8 @@ async def upload_file(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"File upload error: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.exception(e)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/sessions")

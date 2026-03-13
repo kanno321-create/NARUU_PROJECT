@@ -22,7 +22,7 @@ class AIConversation(Base, TimestampMixin):
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     user_id: Mapped[int | None] = mapped_column(
-        Integer, ForeignKey("users.id"), index=True
+        Integer, ForeignKey("users.id", ondelete="SET NULL"), index=True
     )
     context: Mapped[ConversationContext] = mapped_column(
         Enum(ConversationContext, name="conversation_context"),

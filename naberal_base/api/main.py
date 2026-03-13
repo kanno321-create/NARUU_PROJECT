@@ -316,7 +316,7 @@ def _get_cors_origins() -> list[str]:
     origins_str = os.getenv("CORS_ORIGINS", "")
     if not origins_str:
         if config.is_development():
-            return ["*"]
+            return ["http://localhost:3000", "http://localhost:3001", "http://127.0.0.1:3000"]
         return []
     return [o.strip() for o in origins_str.split(",") if o.strip()]
 

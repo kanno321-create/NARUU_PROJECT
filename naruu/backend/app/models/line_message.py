@@ -2,7 +2,7 @@
 
 import enum
 
-from sqlalchemy import Boolean, Enum, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, Enum, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
@@ -23,15 +23,21 @@ class MessageType(str, enum.Enum):
 
 class LineMessage(Base, TimestampMixin):
     __tablename__ = "line_messages"
+    __table_args__ = (
+        Index("ix_line_messages_created_at", "created_at"),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     line_user_id: Mapped[str] = mapped_column(String(100), index=True, nullable=False)
     customer_id: Mapped[int | None] = mapped_column(
-        Integer, ForeignKey("customers.id"), index=True
+        Integer,
+        ForeignKey("customers.id", ondelete="CASCADE"),
+        index=True,
     )
     direction: Mapped[MessageDirection] = mapped_column(
         Enum(MessageDirection, name="message_direction"),
         nullable=False,
+        index=True,
     )
     message_type: Mapped[MessageType] = mapped_column(
         Enum(MessageType, name="message_type"),

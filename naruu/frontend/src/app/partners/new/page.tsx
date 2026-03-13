@@ -2,13 +2,16 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import AppShell from "@/components/layout/app-shell";
 import { api } from "@/lib/api";
 import type { Partner, PartnerType } from "@/lib/types";
+import ErrorBanner from "@/components/ui/error-banner";
 
 export default function NewPartnerPage() {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState({
     name_ko: "",
     name_ja: "",
@@ -28,13 +31,13 @@ export default function NewPartnerPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!form.name_ko.trim()) {
-      alert("업체명(한국어)을 입력하세요.");
+      setError("업체명(한국어)을 입력하세요.");
       return;
     }
 
     const rate = form.commission_rate ? parseFloat(form.commission_rate) : undefined;
     if (rate !== undefined && rate > 30) {
-      alert("커미션율은 30%를 초과할 수 없습니다 (의원급 상한).");
+      setError("커미션율은 30%를 초과할 수 없습니다 (의원급 상한).");
       return;
     }
 
@@ -55,7 +58,7 @@ export default function NewPartnerPage() {
       const created = await api.post<Partner>("/partners", body);
       router.push(`/partners/${created.id}`);
     } catch (e) {
-      alert("등록 실패: " + (e instanceof Error ? e.message : "알 수 없는 오류"));
+      setError("등록 실패: " + (e instanceof Error ? e.message : "알 수 없는 오류"));
     } finally {
       setSaving(false);
     }
@@ -64,11 +67,13 @@ export default function NewPartnerPage() {
   return (
     <AppShell>
       <div className="flex items-center gap-3 mb-6">
-        <button onClick={() => router.push("/partners")} className="text-gray-400 hover:text-gray-600">
-          ← 목록
-        </button>
+        <Link href="/partners" className="text-gray-400 hover:text-gray-600">
+          &larr; 목록
+        </Link>
         <h2 className="text-2xl font-bold text-gray-800">제휴처 등록</h2>
       </div>
+
+      <ErrorBanner message={error} />
 
       <form onSubmit={handleSubmit} className="max-w-2xl space-y-6">
         <div className="bg-white rounded-xl p-6 shadow-sm space-y-4">
@@ -185,13 +190,12 @@ export default function NewPartnerPage() {
           >
             {saving ? "등록 중..." : "제휴처 등록"}
           </button>
-          <button
-            type="button"
-            onClick={() => router.push("/partners")}
+          <Link
+            href="/partners"
             className="px-6 py-2.5 border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-50 transition text-sm"
           >
             취소
-          </button>
+          </Link>
         </div>
       </form>
     </AppShell>

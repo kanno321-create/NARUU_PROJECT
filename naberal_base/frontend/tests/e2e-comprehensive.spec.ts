@@ -4,9 +4,9 @@ import { test, expect, Page } from '@playwright/test';
 const BASE_URL = 'http://localhost:3000';
 const BACKEND_URL = 'http://localhost:8000';
 
-// Login credentials (actual backend password)
+// Login credentials (from environment)
 const CEO_USERNAME = 'ceo';
-const CEO_PASSWORD = 'Ceo@Secure#2024!';
+const CEO_PASSWORD = process.env.CEO_PASSWORD || 'test-only-password';
 
 // Helper function to login
 async function login(page: Page) {

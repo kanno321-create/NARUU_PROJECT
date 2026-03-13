@@ -5,20 +5,17 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import AppShell from "@/components/layout/app-shell";
 import { api } from "@/lib/api";
-import type { Package, PackageCategory } from "@/lib/types";
-
-const CATEGORY_LABELS: Record<PackageCategory, string> = {
-  medical: "의료",
-  tourism: "관광",
-  combo: "콤보",
-  goods: "굿즈",
-};
+import type { Package } from "@/lib/types";
+import { CATEGORY_LABELS } from "@/lib/constants";
+import LoadingSpinner from "@/components/ui/loading-spinner";
+import ErrorBanner from "@/components/ui/error-banner";
 
 export default function PackageDetailPage() {
   const params = useParams();
   const router = useRouter();
   const [pkg, setPkg] = useState<Package | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -38,15 +35,15 @@ export default function PackageDetailPage() {
     try {
       await api.delete(`/packages/${params.id}`);
       router.push("/packages");
-    } catch (err) {
-      console.error("Failed to delete:", err);
+    } catch {
+      setError("패키지 비활성화에 실패했습니다.");
     }
   };
 
   if (loading) {
     return (
       <AppShell>
-        <p className="text-gray-400">로딩 중...</p>
+        <LoadingSpinner text="패키지 로딩 중..." />
       </AppShell>
     );
   }
@@ -83,6 +80,8 @@ export default function PackageDetailPage() {
           </button>
         </div>
       </div>
+
+      <ErrorBanner message={error} />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Info Card */}

@@ -5,6 +5,10 @@ import Link from "next/link";
 import AppShell from "@/components/layout/app-shell";
 import { api } from "@/lib/api";
 import type { Customer, CustomerListResponse } from "@/lib/types";
+import Pagination from "@/components/ui/pagination";
+import LoadingSpinner from "@/components/ui/loading-spinner";
+import ErrorBanner from "@/components/ui/error-banner";
+import SearchFilter from "@/components/ui/search-filter";
 
 export default function CustomersPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -14,13 +18,14 @@ export default function CustomersPage() {
   const [searchInput, setSearchInput] = useState("");
   const [tagFilter, setTagFilter] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchCustomers = useCallback(async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
       params.set("page", String(page));
-      params.set("page_size", "20");
+      params.set("per_page", "20");
       if (search) params.set("search", search);
       if (tagFilter) params.set("tag", tagFilter);
 
@@ -29,8 +34,9 @@ export default function CustomersPage() {
       );
       setCustomers(data.items);
       setTotal(data.total);
-    } catch (err) {
-      console.error("Failed to fetch customers:", err);
+      setError(null);
+    } catch {
+      setError("데이터를 불러오는데 실패했습니다.");
     } finally {
       setLoading(false);
     }
@@ -40,7 +46,6 @@ export default function CustomersPage() {
     fetchCustomers();
   }, [fetchCustomers]);
 
-  // Debounced search
   useEffect(() => {
     const timer = setTimeout(() => {
       setSearch(searchInput);
@@ -63,34 +68,30 @@ export default function CustomersPage() {
         </Link>
       </div>
 
-      {/* Search & Filter */}
-      <div className="flex gap-3 mb-4">
-        <input
-          type="text"
-          placeholder="이름, 이메일, LINE ID, 전화번호 검색..."
-          value={searchInput}
-          onChange={(e) => setSearchInput(e.target.value)}
-          className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-naruu-500 focus:border-naruu-500 outline-none text-sm"
-        />
-        <select
-          value={tagFilter}
-          onChange={(e) => {
-            setTagFilter(e.target.value);
-            setPage(1);
-          }}
-          className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-naruu-500 outline-none"
-        >
-          <option value="">전체 태그</option>
-          <option value="VIP">VIP</option>
-          <option value="리피터">리피터</option>
-          <option value="성형">성형</option>
-          <option value="피부과">피부과</option>
-          <option value="관광">관광</option>
-          <option value="굿즈">굿즈</option>
-        </select>
-      </div>
+      <ErrorBanner message={error} />
 
-      {/* Customer Table */}
+      <SearchFilter
+        searchValue={searchInput}
+        onSearch={setSearchInput}
+        placeholder="이름, 이메일, LINE ID, 전화번호 검색..."
+        filters={[
+          {
+            value: tagFilter,
+            onChange: (v) => { setTagFilter(v); setPage(1); },
+            options: [
+              { value: "VIP", label: "VIP" },
+              { value: "리피터", label: "리피터" },
+              { value: "성형", label: "성형" },
+              { value: "피부과", label: "피부과" },
+              { value: "관광", label: "관광" },
+              { value: "굿즈", label: "굿즈" },
+            ],
+            placeholder: "전체 태그",
+            ariaLabel: "태그 필터",
+          },
+        ]}
+      />
+
       <div className="bg-white rounded-xl shadow-sm overflow-hidden">
         <table className="w-full text-sm">
           <thead className="bg-gray-50 border-b border-gray-200">
@@ -106,49 +107,28 @@ export default function CustomersPage() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={6} className="text-center py-8 text-gray-400">
-                  로딩 중...
-                </td>
+                <td colSpan={6}><LoadingSpinner /></td>
               </tr>
             ) : customers.length === 0 ? (
               <tr>
                 <td colSpan={6} className="text-center py-8 text-gray-400">
-                  {search || tagFilter
-                    ? "검색 결과가 없습니다"
-                    : "등록된 고객이 없습니다"}
+                  {search || tagFilter ? "검색 결과가 없습니다" : "등록된 고객이 없습니다"}
                 </td>
               </tr>
             ) : (
               customers.map((c) => (
-                <tr
-                  key={c.id}
-                  className="border-b border-gray-100 hover:bg-gray-50 transition"
-                >
+                <tr key={c.id} className="border-b border-gray-100 hover:bg-gray-50 transition">
                   <td className="px-4 py-3">
-                    <Link
-                      href={`/customers/${c.id}`}
-                      className="text-naruu-600 hover:underline font-medium"
-                    >
+                    <Link href={`/customers/${c.id}`} className="text-naruu-600 hover:underline font-medium">
                       {c.name_ja}
                     </Link>
                   </td>
-                  <td className="px-4 py-3 text-gray-600">
-                    {c.name_ko || "-"}
-                  </td>
-                  <td className="px-4 py-3 text-gray-500 font-mono text-xs">
-                    {c.line_user_id || "-"}
-                  </td>
-                  <td className="px-4 py-3 text-gray-600">
-                    {c.phone || c.email || "-"}
-                  </td>
+                  <td className="px-4 py-3 text-gray-600">{c.name_ko || "-"}</td>
+                  <td className="px-4 py-3 text-gray-500 font-mono text-xs">{c.line_user_id || "-"}</td>
+                  <td className="px-4 py-3 text-gray-600">{c.phone || c.email || "-"}</td>
                   <td className="px-4 py-3">
                     {c.tags?.map((tag) => (
-                      <span
-                        key={tag}
-                        className="inline-block px-2 py-0.5 bg-naruu-50 text-naruu-700 rounded text-xs mr-1"
-                      >
-                        {tag}
-                      </span>
+                      <span key={tag} className="inline-block px-2 py-0.5 bg-naruu-50 text-naruu-700 rounded text-xs mr-1">{tag}</span>
                     ))}
                   </td>
                   <td className="px-4 py-3 text-gray-400 text-xs">
@@ -160,31 +140,7 @@ export default function CustomersPage() {
           </tbody>
         </table>
 
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100">
-            <span className="text-xs text-gray-500">
-              총 {total}명 중 {(page - 1) * 20 + 1}-
-              {Math.min(page * 20, total)}명
-            </span>
-            <div className="flex gap-1">
-              <button
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page === 1}
-                className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50"
-              >
-                이전
-              </button>
-              <button
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                disabled={page === totalPages}
-                className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50"
-              >
-                다음
-              </button>
-            </div>
-          </div>
-        )}
+        <Pagination page={page} totalPages={totalPages} onPageChange={setPage} total={total} unit="명" />
       </div>
     </AppShell>
   );

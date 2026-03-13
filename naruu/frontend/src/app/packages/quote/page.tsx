@@ -1,8 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import AppShell from "@/components/layout/app-shell";
 import { api } from "@/lib/api";
+import ErrorBanner from "@/components/ui/error-banner";
 import type {
   Package,
   PackageListResponse,
@@ -27,6 +29,7 @@ export default function QuotePage() {
   const [discount, setDiscount] = useState(0);
   const [quote, setQuote] = useState<QuoteResponse | null>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [searchInput, setSearchInput] = useState("");
 
   // AI Recommendation
@@ -44,8 +47,8 @@ export default function QuotePage() {
       try {
         const data = await api.get<PackageListResponse>("/packages?per_page=100");
         setPackages(data.items);
-      } catch (err) {
-        console.error("Failed to load packages:", err);
+      } catch {
+        setError("패키지 목록을 불러오지 못했습니다.");
       }
     })();
   }, []);
@@ -100,9 +103,8 @@ export default function QuotePage() {
       };
       const data = await api.post<QuoteResponse>("/packages/quote", body);
       setQuote(data);
-    } catch (err) {
-      console.error("Quote failed:", err);
-      alert("견적 생성에 실패했습니다.");
+    } catch {
+      setError("견적 생성에 실패했습니다.");
     } finally {
       setLoading(false);
     }
@@ -131,9 +133,8 @@ export default function QuotePage() {
           }
         }
       }
-    } catch (err) {
-      console.error("Recommendation failed:", err);
-      alert("AI 추천에 실패했습니다.");
+    } catch {
+      setError("AI 추천에 실패했습니다.");
     } finally {
       setAiLoading(false);
     }
@@ -179,7 +180,12 @@ export default function QuotePage() {
 
   return (
     <AppShell>
-      <h2 className="text-2xl font-bold text-gray-800 mb-6">견적서 생성</h2>
+      <Link href="/packages" className="text-sm text-naruu-600 hover:underline">
+        &larr; 패키지 목록
+      </Link>
+      <h2 className="text-2xl font-bold text-gray-800 mt-2 mb-6">견적서 생성</h2>
+
+      <ErrorBanner message={error} />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left: Package Picker */}
@@ -238,6 +244,7 @@ export default function QuotePage() {
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               placeholder="패키지 검색..."
+              aria-label="패키지 검색"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm mb-3 outline-none focus:ring-2 focus:ring-naruu-500"
             />
             <div className="max-h-96 overflow-y-auto space-y-2">

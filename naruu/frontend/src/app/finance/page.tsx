@@ -7,24 +7,11 @@ import { api } from "@/lib/api";
 import type {
   OrderItem, OrderListResponse, OrderSummary,
   ExpenseItem, ExpenseListResponse, ExpenseSummary,
-  PnLReport, PaymentStatus,
+  PnLReport,
 } from "@/lib/types";
-
-const STATUS_COLORS: Record<PaymentStatus, string> = {
-  pending: "bg-yellow-100 text-yellow-700",
-  paid: "bg-green-100 text-green-700",
-  refunded: "bg-blue-100 text-blue-700",
-  cancelled: "bg-gray-100 text-gray-500",
-};
-
-const STATUS_LABELS: Record<PaymentStatus, string> = {
-  pending: "대기",
-  paid: "결제완료",
-  refunded: "환불",
-  cancelled: "취소",
-};
-
-const PIE_COLORS = ["#6366f1", "#f59e0b", "#10b981", "#ef4444", "#8b5cf6", "#ec4899"];
+import { PAYMENT_STATUS_LABELS, PAYMENT_STATUS_COLORS, PIE_COLORS } from "@/lib/constants";
+import LoadingSpinner from "@/components/ui/loading-spinner";
+import ErrorBanner from "@/components/ui/error-banner";
 
 export default function FinancePage() {
   const [tab, setTab] = useState<"overview" | "revenue" | "expense">("overview");
@@ -36,6 +23,7 @@ export default function FinancePage() {
   const [orders, setOrders] = useState<OrderItem[]>([]);
   const [expenses, setExpenses] = useState<ExpenseItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // New expense form
   const [showExpenseForm, setShowExpenseForm] = useState(false);
@@ -59,8 +47,12 @@ export default function FinancePage() {
       setExpenseSummary(es);
       setOrders(ol.items);
       setExpenses(el.items);
-    } catch (e) { console.error(e); }
-    finally { setLoading(false); }
+      setError(null);
+    } catch {
+      setError("데이터를 불러오는데 실패했습니다.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function handleAddExpense(e: React.FormEvent) {
@@ -78,8 +70,8 @@ export default function FinancePage() {
       setExpForm({ category: "", vendor_name: "", amount: "", description: "" });
       setShowExpenseForm(false);
       loadData();
-    } catch (e) {
-      alert("등록 실패: " + (e instanceof Error ? e.message : ""));
+    } catch (err) {
+      setError("등록 실패: " + (err instanceof Error ? err.message : "알 수 없는 오류"));
     } finally {
       setSavingExpense(false);
     }
@@ -100,17 +92,21 @@ export default function FinancePage() {
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold text-gray-800">매출/매입 관리</h2>
         <div className="flex gap-2 items-center">
-          <select value={year} onChange={(e) => setYear(Number(e.target.value))} className="px-3 py-2 border border-gray-200 rounded-lg text-sm">
+          <label htmlFor="finance-year" className="sr-only">연도</label>
+          <select id="finance-year" value={year} onChange={(e) => setYear(Number(e.target.value))} className="px-3 py-2 border border-gray-200 rounded-lg text-sm" aria-label="연도 선택">
             {[2024, 2025, 2026].map((y) => <option key={y} value={y}>{y}년</option>)}
           </select>
-          <select value={month} onChange={(e) => setMonth(Number(e.target.value))} className="px-3 py-2 border border-gray-200 rounded-lg text-sm">
+          <label htmlFor="finance-month" className="sr-only">월</label>
+          <select id="finance-month" value={month} onChange={(e) => setMonth(Number(e.target.value))} className="px-3 py-2 border border-gray-200 rounded-lg text-sm" aria-label="월 선택">
             {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => <option key={m} value={m}>{m}월</option>)}
           </select>
         </div>
       </div>
 
+      <ErrorBanner message={error} />
+
       {/* Tabs */}
-      <div className="flex gap-1 mb-6 bg-gray-100 rounded-lg p-1 w-fit">
+      <div className="flex gap-1 mb-6 bg-gray-100 rounded-lg p-1 w-fit" role="tablist" aria-label="재무 탭">
         {[
           { key: "overview", label: "손익 개요" },
           { key: "revenue", label: "매출 (주문)" },
@@ -118,6 +114,8 @@ export default function FinancePage() {
         ].map((t) => (
           <button
             key={t.key}
+            role="tab"
+            aria-selected={tab === t.key}
             onClick={() => setTab(t.key as typeof tab)}
             className={`px-4 py-2 rounded-md text-sm font-medium transition ${
               tab === t.key ? "bg-white shadow text-naruu-700" : "text-gray-500 hover:text-gray-700"
@@ -129,7 +127,7 @@ export default function FinancePage() {
       </div>
 
       {loading ? (
-        <div className="text-center py-12 text-gray-400">로딩 중...</div>
+        <LoadingSpinner text="데이터 로딩 중..." />
       ) : tab === "overview" ? (
         /* P&L Overview */
         <div className="space-y-6">
@@ -168,7 +166,7 @@ export default function FinancePage() {
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="name" />
                     <YAxis />
-                    <Tooltip formatter={(v: number) => v.toLocaleString()} />
+                    <Tooltip formatter={(v: any) => v.toLocaleString()} />
                     <Bar dataKey="value" fill="#6366f1" radius={[4, 4, 0, 0]}>
                       {pnlBarData.map((entry, i) => (
                         <Cell
@@ -203,13 +201,13 @@ export default function FinancePage() {
                     outerRadius={90}
                     dataKey="total"
                     nameKey="category"
-                    label={({ category, total }) => `${category} ${total.toLocaleString()}`}
+                    label={(props: any) => `${props.category} ${Number(props.total).toLocaleString()}`}
                   >
                     {expenseSummary.by_category.map((_, i) => (
                       <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(v: number) => v.toLocaleString()} />
+                  <Tooltip formatter={(v: any) => v.toLocaleString()} />
                 </PieChart>
               </ResponsiveContainer>
             </div>
@@ -243,12 +241,12 @@ export default function FinancePage() {
             <table className="w-full text-sm">
               <thead className="bg-gray-50 text-gray-600">
                 <tr>
-                  <th className="px-4 py-3 text-left">주문 ID</th>
-                  <th className="px-4 py-3 text-left">고객 ID</th>
-                  <th className="px-4 py-3 text-right">금액</th>
-                  <th className="px-4 py-3 text-center">상태</th>
-                  <th className="px-4 py-3 text-right">커미션</th>
-                  <th className="px-4 py-3 text-left">일시</th>
+                  <th className="px-4 py-3 text-left font-medium">주문 ID</th>
+                  <th className="px-4 py-3 text-left font-medium">고객 ID</th>
+                  <th className="px-4 py-3 text-right font-medium">금액</th>
+                  <th className="px-4 py-3 text-center font-medium">상태</th>
+                  <th className="px-4 py-3 text-right font-medium">커미션</th>
+                  <th className="px-4 py-3 text-left font-medium">일시</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -260,8 +258,8 @@ export default function FinancePage() {
                     <td className="px-4 py-3 font-mono">#{o.customer_id}</td>
                     <td className="px-4 py-3 text-right font-medium">{o.total_amount.toLocaleString()} {o.currency}</td>
                     <td className="px-4 py-3 text-center">
-                      <span className={`text-xs px-2 py-1 rounded-full ${STATUS_COLORS[o.payment_status]}`}>
-                        {STATUS_LABELS[o.payment_status]}
+                      <span className={`text-xs px-2 py-1 rounded-full ${PAYMENT_STATUS_COLORS[o.payment_status]}`}>
+                        {PAYMENT_STATUS_LABELS[o.payment_status]}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-right text-orange-600">
@@ -289,37 +287,57 @@ export default function FinancePage() {
           {showExpenseForm && (
             <form onSubmit={handleAddExpense} className="bg-white rounded-xl p-6 shadow-sm space-y-3">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <input
-                  type="text"
-                  placeholder="카테고리 (교통비, 식비 등)"
-                  value={expForm.category}
-                  onChange={(e) => setExpForm({ ...expForm, category: e.target.value })}
-                  className="px-3 py-2 border border-gray-200 rounded-lg text-sm"
-                  required
-                />
-                <input
-                  type="text"
-                  placeholder="업체/거래처명"
-                  value={expForm.vendor_name}
-                  onChange={(e) => setExpForm({ ...expForm, vendor_name: e.target.value })}
-                  className="px-3 py-2 border border-gray-200 rounded-lg text-sm"
-                  required
-                />
-                <input
-                  type="number"
-                  placeholder="금액"
-                  value={expForm.amount}
-                  onChange={(e) => setExpForm({ ...expForm, amount: e.target.value })}
-                  className="px-3 py-2 border border-gray-200 rounded-lg text-sm"
-                  required
-                />
-                <input
-                  type="text"
-                  placeholder="설명 (선택)"
-                  value={expForm.description}
-                  onChange={(e) => setExpForm({ ...expForm, description: e.target.value })}
-                  className="px-3 py-2 border border-gray-200 rounded-lg text-sm"
-                />
+                <div>
+                  <label htmlFor="exp-category" className="sr-only">카테고리</label>
+                  <input
+                    id="exp-category"
+                    type="text"
+                    placeholder="카테고리 (교통비, 식비 등)"
+                    value={expForm.category}
+                    onChange={(e) => setExpForm({ ...expForm, category: e.target.value })}
+                    className="px-3 py-2 border border-gray-200 rounded-lg text-sm w-full"
+                    required
+                    aria-label="카테고리"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="exp-vendor" className="sr-only">거래처</label>
+                  <input
+                    id="exp-vendor"
+                    type="text"
+                    placeholder="업체/거래처명"
+                    value={expForm.vendor_name}
+                    onChange={(e) => setExpForm({ ...expForm, vendor_name: e.target.value })}
+                    className="px-3 py-2 border border-gray-200 rounded-lg text-sm w-full"
+                    required
+                    aria-label="거래처"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="exp-amount" className="sr-only">금액</label>
+                  <input
+                    id="exp-amount"
+                    type="number"
+                    placeholder="금액"
+                    value={expForm.amount}
+                    onChange={(e) => setExpForm({ ...expForm, amount: e.target.value })}
+                    className="px-3 py-2 border border-gray-200 rounded-lg text-sm w-full"
+                    required
+                    aria-label="금액"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="exp-desc" className="sr-only">설명</label>
+                  <input
+                    id="exp-desc"
+                    type="text"
+                    placeholder="설명 (선택)"
+                    value={expForm.description}
+                    onChange={(e) => setExpForm({ ...expForm, description: e.target.value })}
+                    className="px-3 py-2 border border-gray-200 rounded-lg text-sm w-full"
+                    aria-label="설명"
+                  />
+                </div>
               </div>
               <button
                 type="submit"
@@ -352,25 +370,25 @@ export default function FinancePage() {
             <table className="w-full text-sm">
               <thead className="bg-gray-50 text-gray-600">
                 <tr>
-                  <th className="px-4 py-3 text-left">카테고리</th>
-                  <th className="px-4 py-3 text-left">거래처</th>
-                  <th className="px-4 py-3 text-right">금액</th>
-                  <th className="px-4 py-3 text-left">설명</th>
-                  <th className="px-4 py-3 text-left">일시</th>
+                  <th className="px-4 py-3 text-left font-medium">카테고리</th>
+                  <th className="px-4 py-3 text-left font-medium">거래처</th>
+                  <th className="px-4 py-3 text-right font-medium">금액</th>
+                  <th className="px-4 py-3 text-left font-medium">설명</th>
+                  <th className="px-4 py-3 text-left font-medium">일시</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {expenses.length === 0 ? (
                   <tr><td colSpan={5} className="px-4 py-8 text-center text-gray-400">매입 내역이 없습니다.</td></tr>
-                ) : expenses.map((e) => (
-                  <tr key={e.id} className="hover:bg-gray-50">
+                ) : expenses.map((exp) => (
+                  <tr key={exp.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3">
-                      <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-700">{e.category}</span>
+                      <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-700">{exp.category}</span>
                     </td>
-                    <td className="px-4 py-3">{e.vendor_name}</td>
-                    <td className="px-4 py-3 text-right font-medium text-red-600">{e.amount.toLocaleString()} {e.currency}</td>
-                    <td className="px-4 py-3 text-gray-500 text-xs max-w-xs truncate">{e.description || "-"}</td>
-                    <td className="px-4 py-3 text-xs text-gray-500">{new Date(e.created_at).toLocaleDateString("ko-KR")}</td>
+                    <td className="px-4 py-3">{exp.vendor_name}</td>
+                    <td className="px-4 py-3 text-right font-medium text-red-600">{exp.amount.toLocaleString()} {exp.currency}</td>
+                    <td className="px-4 py-3 text-gray-500 text-xs max-w-xs truncate">{exp.description || "-"}</td>
+                    <td className="px-4 py-3 text-xs text-gray-500">{new Date(exp.created_at).toLocaleDateString("ko-KR")}</td>
                   </tr>
                 ))}
               </tbody>

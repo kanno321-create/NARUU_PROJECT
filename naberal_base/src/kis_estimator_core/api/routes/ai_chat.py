@@ -2972,8 +2972,8 @@ async def chat(request: ChatRequest) -> ChatResponse:
         return response
 
     except Exception as e:
-        logger.error(f"Chat error: {e}")
-        raise HTTPException(status_code=500, detail=str(e)) from e
+        logger.exception(e)
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.get("/models")

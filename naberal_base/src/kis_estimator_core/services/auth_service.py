@@ -45,10 +45,7 @@ def _get_jwt_secret() -> str:
     """JWT 시크릿 키 조회 (환경변수 필수)"""
     secret = os.getenv("JWT_SECRET_KEY")
     if not secret:
-        if os.getenv("APP_ENV", "development").lower() == "development":
-            logger.warning("⚠️ JWT_SECRET_KEY 미설정 - 개발 모드 기본값 사용")
-            return "dev-only-secret-key-not-for-production"
-        raise ValueError("JWT_SECRET_KEY 환경변수가 설정되지 않았습니다.")
+        raise RuntimeError("JWT_SECRET_KEY environment variable must be set")
     if len(secret) < 32:
         raise ValueError("JWT_SECRET_KEY는 최소 32자 이상이어야 합니다.")
     return secret

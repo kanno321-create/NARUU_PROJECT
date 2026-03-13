@@ -6,29 +6,9 @@ import Link from "next/link";
 import AppShell from "@/components/layout/app-shell";
 import { api } from "@/lib/api";
 import type { Content, ContentStatus } from "@/lib/types";
-
-const STATUS_LABELS: Record<ContentStatus, string> = {
-  draft: "초안",
-  review: "검토 중",
-  approved: "승인됨",
-  published: "게시됨",
-  rejected: "반려",
-};
-
-const STATUS_COLORS: Record<ContentStatus, string> = {
-  draft: "bg-gray-100 text-gray-700",
-  review: "bg-amber-100 text-amber-700",
-  approved: "bg-green-100 text-green-700",
-  published: "bg-blue-100 text-blue-700",
-  rejected: "bg-red-100 text-red-700",
-};
-
-const SERIES_LABELS: Record<string, string> = {
-  DaeguTour: "대구투어",
-  JCouple: "J커플",
-  Medical: "의료",
-  Brochure: "브로슈어",
-};
+import { CONTENT_STATUS_LABELS, CONTENT_STATUS_COLORS, SERIES_LABELS } from "@/lib/constants";
+import LoadingSpinner from "@/components/ui/loading-spinner";
+import ErrorBanner from "@/components/ui/error-banner";
 
 const WORKFLOW_STEPS: ContentStatus[] = [
   "draft",
@@ -54,6 +34,7 @@ export default function ContentDetailPage() {
   const router = useRouter();
   const [content, setContent] = useState<Content | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [makeLoading, setMakeLoading] = useState(false);
 
@@ -88,7 +69,7 @@ export default function ContentDetailPage() {
       setContent(updated);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "워크플로우 처리에 실패했습니다.";
-      alert(message);
+      setError(message);
     } finally {
       setActionLoading(false);
     }
@@ -102,9 +83,10 @@ export default function ContentDetailPage() {
         content_id: content.id,
         blueprint,
       });
-      alert(`Make.com '${blueprint}' 블루프린트가 트리거되었습니다!`);
+      setError(null);
+      // Success notification could use a toast, but for now show nothing on success
     } catch {
-      alert("Make.com 웹훅 트리거에 실패했습니다.");
+      setError("Make.com 웹훅 트리거에 실패했습니다.");
     } finally {
       setMakeLoading(false);
     }
@@ -116,14 +98,14 @@ export default function ContentDetailPage() {
       await api.delete(`/content/${params.id}`);
       router.push("/content");
     } catch {
-      alert("삭제에 실패했습니다.");
+      setError("삭제에 실패했습니다.");
     }
   };
 
   if (loading) {
     return (
       <AppShell>
-        <p className="text-gray-400">로딩 중...</p>
+        <LoadingSpinner text="콘텐츠 로딩 중..." />
       </AppShell>
     );
   }
@@ -146,9 +128,9 @@ export default function ContentDetailPage() {
               {SERIES_LABELS[content.series] || content.series}
             </span>
             <span
-              className={`px-2 py-0.5 rounded text-xs font-medium ${STATUS_COLORS[content.status]}`}
+              className={`px-2 py-0.5 rounded text-xs font-medium ${CONTENT_STATUS_COLORS[content.status]}`}
             >
-              {STATUS_LABELS[content.status]}
+              {CONTENT_STATUS_LABELS[content.status]}
             </span>
           </div>
         </div>
@@ -159,6 +141,8 @@ export default function ContentDetailPage() {
           삭제
         </button>
       </div>
+
+      <ErrorBanner message={error} />
 
       {/* Workflow Progress */}
       <div className="bg-white rounded-xl p-6 shadow-sm mb-6">
@@ -191,7 +175,7 @@ export default function ContentDetailPage() {
                     isActive ? "text-naruu-700 font-semibold" : "text-gray-500"
                   }`}
                 >
-                  {STATUS_LABELS[step]}
+                  {CONTENT_STATUS_LABELS[step]}
                 </span>
                 {i < WORKFLOW_STEPS.length - 1 && (
                   <div

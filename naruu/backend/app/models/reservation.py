@@ -29,13 +29,20 @@ class Reservation(Base, TimestampMixin):
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     customer_id: Mapped[int] = mapped_column(
-        Integer, ForeignKey("customers.id"), nullable=False, index=True
+        Integer,
+        ForeignKey("customers.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     package_id: Mapped[int | None] = mapped_column(
-        Integer, ForeignKey("packages.id")
+        Integer,
+        ForeignKey("packages.id", ondelete="SET NULL"),
+        index=True,
     )
     partner_id: Mapped[int | None] = mapped_column(
-        Integer, ForeignKey("partners.id")
+        Integer,
+        ForeignKey("partners.id", ondelete="SET NULL"),
+        index=True,
     )
     reservation_date: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False
@@ -44,13 +51,17 @@ class Reservation(Base, TimestampMixin):
         Enum(ReservationStatus, name="reservation_status"),
         default=ReservationStatus.PENDING,
         nullable=False,
+        index=True,
     )
     type: Mapped[ReservationType] = mapped_column(
         Enum(ReservationType, name="reservation_type"),
         nullable=False,
+        index=True,
     )
     notes_ja: Mapped[str | None] = mapped_column(Text)
     notes_ko: Mapped[str | None] = mapped_column(Text)
     created_by: Mapped[int | None] = mapped_column(
-        Integer, ForeignKey("users.id")
+        Integer,
+        ForeignKey("users.id", ondelete="SET NULL"),
+        index=True,
     )

@@ -1,7 +1,7 @@
 """Add learning tables for AI Self-Learning System
 
 Revision ID: 20251213_learning
-Revises:
+Revises: 20251201_erp_full_tables
 Create Date: 2025-12-13
 
 Phase XIII - AI Self-Learning System
@@ -17,7 +17,7 @@ from sqlalchemy.dialects.postgresql import UUID, JSONB
 
 # revision identifiers, used by Alembic.
 revision = '20251213_learning'
-down_revision = None
+down_revision = '20251201_erp_full_tables'
 branch_labels = None
 depends_on = None
 

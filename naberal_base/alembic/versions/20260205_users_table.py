@@ -1,7 +1,7 @@
 """Add users table for persistent authentication
 
 Revision ID: 20260205_users_table
-Revises: 20251201_erp_full_tables
+Revises: 20251213_learning
 Create Date: 2026-02-05 12:00:00
 
 This migration adds users table for persistent authentication:
@@ -17,7 +17,7 @@ import os
 
 # revision identifiers, used by Alembic.
 revision = '20260205_users_table'
-down_revision = '20251201_erp_full_tables'
+down_revision = '20251213_learning'
 branch_labels = None
 depends_on = None
 
@@ -88,7 +88,15 @@ def upgrade():
     # Seed default CEO account
     import uuid
     ceo_id = str(uuid.uuid4())
-    default_password = os.getenv("CEO_DEFAULT_PASSWORD", "Ceo@Secure#2024!")
+    default_password = os.getenv("CEO_DEFAULT_PASSWORD", "MUST_SET_CEO_PASSWORD")
+    if default_password == "MUST_SET_CEO_PASSWORD":
+        import warnings
+        warnings.warn(
+            "CEO_DEFAULT_PASSWORD env var not set. Using placeholder password. "
+            "Set CEO_DEFAULT_PASSWORD before running this migration in production.",
+            RuntimeWarning,
+            stacklevel=2,
+        )
     hashed_password = pwd_context.hash(default_password)
 
     op.execute(f"""

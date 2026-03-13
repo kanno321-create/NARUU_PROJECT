@@ -2,15 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
 import AppShell from "@/components/layout/app-shell";
 import { api } from "@/lib/api";
-import type { GoodsItem, GoodsCategory } from "@/lib/types";
-
-const CAT_LABELS: Record<GoodsCategory, string> = {
-  bag: "가방",
-  accessory: "액세서리",
-  souvenir: "기념품",
-};
+import type { GoodsItem } from "@/lib/types";
+import { CAT_LABELS } from "@/lib/constants";
+import LoadingSpinner from "@/components/ui/loading-spinner";
+import ErrorBanner from "@/components/ui/error-banner";
 
 export default function GoodsDetailPage() {
   const params = useParams();
@@ -22,6 +20,7 @@ export default function GoodsDetailPage() {
   const [adjustQty, setAdjustQty] = useState("");
   const [adjustReason, setAdjustReason] = useState("");
   const [adjusting, setAdjusting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => { loadGoods(); }, [goodsId]);
 
@@ -50,7 +49,7 @@ export default function GoodsDetailPage() {
       setAdjustQty("");
       setAdjustReason("");
     } catch (e) {
-      alert("재고 조정 실패: " + (e instanceof Error ? e.message : "알 수 없는 오류"));
+      setError("재고 조정 실패: " + (e instanceof Error ? e.message : "알 수 없는 오류"));
     } finally {
       setAdjusting(false);
     }
@@ -59,7 +58,7 @@ export default function GoodsDetailPage() {
   if (loading) {
     return (
       <AppShell>
-        <div className="flex items-center justify-center py-20 text-gray-400">로딩 중...</div>
+        <LoadingSpinner text="상품 로딩 중..." />
       </AppShell>
     );
   }
@@ -69,14 +68,16 @@ export default function GoodsDetailPage() {
   return (
     <AppShell>
       <div className="flex items-center gap-3 mb-6">
-        <button onClick={() => router.push("/goods")} className="text-gray-400 hover:text-gray-600">
-          ← 목록
-        </button>
+        <Link href="/goods" className="text-gray-400 hover:text-gray-600">
+          &larr; 목록
+        </Link>
         <h2 className="text-2xl font-bold text-gray-800">{goods.name_ko}</h2>
         {!goods.is_active && (
           <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-500">판매 중지</span>
         )}
       </div>
+
+      <ErrorBanner message={error} />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left */}
@@ -87,7 +88,7 @@ export default function GoodsDetailPage() {
               {goods.image_urls && goods.image_urls.length > 0 ? (
                 <img src={goods.image_urls[0]} alt={goods.name_ko} className="h-full w-full object-contain" />
               ) : (
-                <span className="text-6xl">🛍️</span>
+                <span className="text-6xl" aria-hidden="true">🛍️</span>
               )}
             </div>
           </div>
@@ -131,7 +132,7 @@ export default function GoodsDetailPage() {
             )}
             {goods.description_ja && (
               <div className="mt-3">
-                <p className="text-xs text-gray-500 mb-1">説明 (日本語)</p>
+                <p className="text-xs text-gray-500 mb-1">설명 (일본어)</p>
                 <p className="text-gray-700 text-sm whitespace-pre-wrap">{goods.description_ja}</p>
               </div>
             )}
@@ -163,6 +164,7 @@ export default function GoodsDetailPage() {
                   value={adjustQty}
                   onChange={(e) => setAdjustQty(e.target.value)}
                   placeholder="+10 또는 -5"
+                  aria-label="재고 조정 수량"
                   className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white"
                 />
                 <button
@@ -178,6 +180,7 @@ export default function GoodsDetailPage() {
                 value={adjustReason}
                 onChange={(e) => setAdjustReason(e.target.value)}
                 placeholder="사유 (선택)"
+                aria-label="재고 조정 사유"
                 className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white"
               />
             </div>

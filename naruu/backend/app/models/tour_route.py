@@ -76,11 +76,17 @@ class TourRoute(Base, TimestampMixin):
 
     # Relations
     customer_id: Mapped[int | None] = mapped_column(
-        Integer, ForeignKey("customers.id"), index=True
+        Integer,
+        ForeignKey("customers.id", ondelete="SET NULL"),
+        index=True,
     )
     package_id: Mapped[int | None] = mapped_column(
-        Integer, ForeignKey("packages.id")
+        Integer,
+        ForeignKey("packages.id", ondelete="SET NULL"),
+        index=True,
     )
     created_by: Mapped[int | None] = mapped_column(
-        Integer, ForeignKey("users.id")
+        Integer,
+        ForeignKey("users.id", ondelete="SET NULL"),
+        index=True,
     )

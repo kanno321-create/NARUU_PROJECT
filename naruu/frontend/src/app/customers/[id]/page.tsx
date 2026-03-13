@@ -6,6 +6,8 @@ import Link from "next/link";
 import AppShell from "@/components/layout/app-shell";
 import { api } from "@/lib/api";
 import type { CustomerDetail, JourneyEvent } from "@/lib/types";
+import LoadingSpinner from "@/components/ui/loading-spinner";
+import ErrorBanner from "@/components/ui/error-banner";
 
 const EVENT_ICONS: Record<string, string> = {
   reservation: "📅",
@@ -51,26 +53,28 @@ export default function CustomerDetailPage() {
     try {
       await api.delete(`/customers/${params.id}`);
       router.push("/customers");
-    } catch (err) {
-      alert("삭제 실패");
+    } catch {
+      setError("고객 삭제에 실패했습니다.");
     }
   };
 
   if (loading) {
     return (
       <AppShell>
-        <div className="text-center py-12 text-gray-400">로딩 중...</div>
+        <LoadingSpinner text="고객 정보 로딩 중..." />
       </AppShell>
     );
   }
 
-  if (error || !customer) {
+  if (error && !customer) {
     return (
       <AppShell>
-        <div className="text-center py-12 text-red-500">{error}</div>
+        <ErrorBanner message={error} />
       </AppShell>
     );
   }
+
+  if (!customer) return null;
 
   return (
     <AppShell>
@@ -107,6 +111,8 @@ export default function CustomerDetailPage() {
           </button>
         </div>
       </div>
+
+      <ErrorBanner message={error} />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Customer Info */}
@@ -251,6 +257,7 @@ function TimelineItem({
       <div className="flex flex-col items-center">
         <div
           className={`w-8 h-8 rounded-full border-2 ${borderColor} bg-white flex items-center justify-center text-sm`}
+          aria-hidden="true"
         >
           {icon}
         </div>

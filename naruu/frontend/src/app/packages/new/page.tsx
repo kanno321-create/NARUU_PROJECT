@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import AppShell from "@/components/layout/app-shell";
 import { api } from "@/lib/api";
 import type { PackageCategory, CurrencyType, PackageCreate } from "@/lib/types";
+import ErrorBanner from "@/components/ui/error-banner";
 
 const CATEGORIES: { value: PackageCategory; label: string }[] = [
   { value: "medical", label: "의료" },
@@ -16,6 +18,7 @@ const CATEGORIES: { value: PackageCategory; label: string }[] = [
 export default function NewPackagePage() {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [includeInput, setIncludeInput] = useState("");
 
   const [form, setForm] = useState<PackageCreate>({
@@ -57,9 +60,8 @@ export default function NewPackagePage() {
     try {
       await api.post("/packages", form);
       router.push("/packages");
-    } catch (err) {
-      console.error("Failed to create package:", err);
-      alert("패키지 생성에 실패했습니다.");
+    } catch {
+      setError("패키지 생성에 실패했습니다.");
     } finally {
       setSaving(false);
     }
@@ -67,7 +69,12 @@ export default function NewPackagePage() {
 
   return (
     <AppShell>
-      <h2 className="text-2xl font-bold text-gray-800 mb-6">신규 패키지 등록</h2>
+      <Link href="/packages" className="text-sm text-naruu-600 hover:underline">
+        &larr; 패키지 목록
+      </Link>
+      <h2 className="text-2xl font-bold text-gray-800 mt-2 mb-6">신규 패키지 등록</h2>
+
+      <ErrorBanner message={error} />
 
       <form onSubmit={handleSubmit} className="max-w-2xl space-y-6">
         {/* Names */}
@@ -234,13 +241,12 @@ export default function NewPackagePage() {
           >
             {saving ? "저장 중..." : "패키지 등록"}
           </button>
-          <button
-            type="button"
-            onClick={() => router.push("/packages")}
+          <Link
+            href="/packages"
             className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition text-sm"
           >
             취소
-          </button>
+          </Link>
         </div>
       </form>
     </AppShell>

@@ -4,7 +4,7 @@ import enum
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import DateTime, Enum, String, Text
+from sqlalchemy import DateTime, Enum, Index, String, Text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -35,6 +35,9 @@ class ContentPlatform(str, enum.Enum):
 
 class Content(Base, TimestampMixin):
     __tablename__ = "contents"
+    __table_args__ = (
+        Index("ix_contents_created_at", "created_at"),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     title: Mapped[str] = mapped_column(String(300), nullable=False)
@@ -48,6 +51,7 @@ class Content(Base, TimestampMixin):
         Enum(ContentStatus, name="content_status"),
         default=ContentStatus.DRAFT,
         nullable=False,
+        index=True,
     )
     video_url: Mapped[str | None] = mapped_column(String(500))
     thumbnail_url: Mapped[str | None] = mapped_column(String(500))

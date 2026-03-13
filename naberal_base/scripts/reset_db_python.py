@@ -1,11 +1,30 @@
 #!/usr/bin/env python3
 """
 Supabase Database Reset via psycopg2
+
+Requires environment variables:
+  DB_PASSWORD  - PostgreSQL password (required)
+  DB_HOST      - Database host (required)
+  DB_USER      - Database user (default: postgres)
+  DB_PORT      - Database port (default: 5432)
+  DB_NAME      - Database name (default: postgres)
 """
+import os
 import psycopg2
 import sys
 
-DB_URL = "postgresql://postgres:rhkdskatit1@db.cgqukhmqnndwdbmkmjrn.supabase.co:5432/postgres"
+DB_PASSWORD = os.getenv("DB_PASSWORD", "")
+DB_HOST = os.getenv("DB_HOST", "")
+DB_USER = os.getenv("DB_USER", "postgres")
+DB_PORT = os.getenv("DB_PORT", "5432")
+DB_NAME = os.getenv("DB_NAME", "postgres")
+
+if not DB_PASSWORD:
+    raise RuntimeError("DB_PASSWORD must be set")
+if not DB_HOST:
+    raise RuntimeError("DB_HOST must be set")
+
+DB_URL = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
 RESET_SQL = """
 -- 1. Drop existing tables

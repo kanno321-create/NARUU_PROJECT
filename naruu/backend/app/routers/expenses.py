@@ -1,9 +1,9 @@
 """Expense management: CRUD, monthly summaries, P&L data."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import func, select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -51,8 +51,7 @@ class ExpenseOut(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ExpenseListResponse(BaseModel):
@@ -110,7 +109,7 @@ async def expense_summary(
     _user: User = Depends(get_current_user),
 ):
     """Monthly expense summary."""
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     y = year or now.year
     m = month or now.month
 
@@ -158,7 +157,7 @@ async def profit_and_loss(
     _user: User = Depends(get_current_user),
 ):
     """Monthly Profit & Loss statement."""
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     y = year or now.year
     m = month or now.month
 
@@ -228,7 +227,7 @@ async def create_expense(
 ):
     expense = Expense(**data.model_dump())
     db.add(expense)
-    await db.commit()
+    await db.flush()
     await db.refresh(expense)
     return ExpenseOut.model_validate(expense)
 
@@ -249,7 +248,7 @@ async def update_expense(
     for key, value in update_data.items():
         setattr(expense, key, value)
 
-    await db.commit()
+    await db.flush()
     await db.refresh(expense)
     return ExpenseOut.model_validate(expense)
 
@@ -266,5 +265,5 @@ async def delete_expense(
         raise HTTPException(404, "Expense not found")
 
     await db.delete(expense)
-    await db.commit()
+    await db.flush()
     return {"message": "Expense deleted"}

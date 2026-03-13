@@ -16,6 +16,7 @@ class ReviewPlatform(str, enum.Enum):
     INSTAGRAM = "instagram"
     LINE = "line"
     NAVER = "naver"
+    TABELOG = "tabelog"
 
 
 class Review(Base, TimestampMixin):
@@ -23,10 +24,14 @@ class Review(Base, TimestampMixin):
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     customer_id: Mapped[int | None] = mapped_column(
-        Integer, ForeignKey("customers.id"), index=True
+        Integer,
+        ForeignKey("customers.id", ondelete="SET NULL"),
+        index=True,
     )
     partner_id: Mapped[int | None] = mapped_column(
-        Integer, ForeignKey("partners.id")
+        Integer,
+        ForeignKey("partners.id", ondelete="SET NULL"),
+        index=True,
     )
     platform: Mapped[ReviewPlatform] = mapped_column(
         Enum(ReviewPlatform, name="review_platform"),

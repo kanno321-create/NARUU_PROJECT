@@ -4,19 +4,12 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import AppShell from "@/components/layout/app-shell";
 import { api } from "@/lib/api";
-import type { TourRoute, TourRouteListResponse, RouteStatus } from "@/lib/types";
-
-const STATUS_LABELS: Record<RouteStatus, string> = {
-  draft: "초안",
-  published: "공개",
-  archived: "보관",
-};
-
-const STATUS_COLORS: Record<RouteStatus, string> = {
-  draft: "bg-gray-100 text-gray-600",
-  published: "bg-green-100 text-green-700",
-  archived: "bg-red-100 text-red-600",
-};
+import type { TourRoute, TourRouteListResponse } from "@/lib/types";
+import { ROUTE_STATUS_LABELS, ROUTE_STATUS_COLORS } from "@/lib/constants";
+import Pagination from "@/components/ui/pagination";
+import LoadingSpinner from "@/components/ui/loading-spinner";
+import ErrorBanner from "@/components/ui/error-banner";
+import SearchFilter from "@/components/ui/search-filter";
 
 export default function RoutesPage() {
   const [routes, setRoutes] = useState<TourRoute[]>([]);
@@ -26,6 +19,7 @@ export default function RoutesPage() {
   const [searchInput, setSearchInput] = useState("");
   const [templateOnly, setTemplateOnly] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchRoutes = useCallback(async () => {
     setLoading(true);
@@ -41,8 +35,9 @@ export default function RoutesPage() {
       );
       setRoutes(data.items);
       setTotal(data.total);
-    } catch (err) {
-      console.error("Failed to fetch routes:", err);
+      setError(null);
+    } catch {
+      setError("루트를 불러오는데 실패했습니다.");
     } finally {
       setLoading(false);
     }
@@ -81,20 +76,21 @@ export default function RoutesPage() {
         </Link>
       </div>
 
+      <ErrorBanner message={error} />
+
       {/* Search & Filter */}
       <div className="flex gap-3 mb-4">
-        <input
-          type="text"
+        <SearchFilter
+          searchValue={searchInput}
+          onSearch={setSearchInput}
           placeholder="루트 검색 (일본어/한국어)..."
-          value={searchInput}
-          onChange={(e) => setSearchInput(e.target.value)}
-          className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-naruu-500 focus:border-naruu-500 outline-none text-sm"
         />
         <button
           onClick={() => {
             setTemplateOnly(!templateOnly);
             setPage(1);
           }}
+          aria-pressed={templateOnly}
           className={`px-4 py-2 border rounded-lg text-sm transition ${
             templateOnly
               ? "border-naruu-600 bg-naruu-50 text-naruu-700"
@@ -108,7 +104,7 @@ export default function RoutesPage() {
       {/* Route Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {loading ? (
-          <div className="col-span-3 text-center py-12 text-gray-400">로딩 중...</div>
+          <div className="col-span-3"><LoadingSpinner /></div>
         ) : routes.length === 0 ? (
           <div className="col-span-3 text-center py-12 text-gray-400">
             {search ? "검색 결과가 없습니다" : "등록된 루트가 없습니다"}
@@ -126,9 +122,9 @@ export default function RoutesPage() {
                   <p className="text-sm text-gray-500">{route.name_ko}</p>
                 </div>
                 <span
-                  className={`px-2 py-0.5 rounded text-xs font-medium ${STATUS_COLORS[route.status]}`}
+                  className={`px-2 py-0.5 rounded text-xs font-medium ${ROUTE_STATUS_COLORS[route.status]}`}
                 >
-                  {STATUS_LABELS[route.status]}
+                  {ROUTE_STATUS_LABELS[route.status]}
                 </span>
               </div>
 
@@ -160,28 +156,7 @@ export default function RoutesPage() {
         )}
       </div>
 
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between mt-6">
-          <span className="text-xs text-gray-500">총 {total}개</span>
-          <div className="flex gap-1">
-            <button
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page === 1}
-              className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50"
-            >
-              이전
-            </button>
-            <button
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={page === totalPages}
-              className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50"
-            >
-              다음
-            </button>
-          </div>
-        </div>
-      )}
+      <Pagination page={page} totalPages={totalPages} onPageChange={setPage} total={total} unit="개" />
     </AppShell>
   );
 }

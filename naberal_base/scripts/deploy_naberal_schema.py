@@ -16,12 +16,15 @@ if sys.platform == 'win32':
 
 import psycopg2
 
-# Connection parameters (direct connection)
-DB_HOST = "db.jijifnzcoxglafvjltwn.supabase.co"
+# Connection parameters (from environment variables)
+DB_HOST = os.getenv("DB_HOST", "")
 DB_PORT = "5432"
 DB_NAME = "postgres"
 DB_USER = "postgres"
-DB_PASSWORD = "rhkdskatit1"
+DB_PASSWORD = os.getenv("DB_PASSWORD", "")
+
+if not DB_PASSWORD or not DB_HOST:
+    raise RuntimeError("DB_PASSWORD and DB_HOST must be set")
 
 def main():
     """Deploy database schema to NABERAL Supabase project"""

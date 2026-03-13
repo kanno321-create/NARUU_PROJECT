@@ -4,23 +4,12 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import AppShell from "@/components/layout/app-shell";
 import { api } from "@/lib/api";
-import type { Partner, PartnerListResponse, PartnerStats, PartnerType } from "@/lib/types";
-
-const TYPE_LABELS: Record<PartnerType, string> = {
-  hospital: "병원",
-  clinic: "클리닉",
-  restaurant: "레스토랑",
-  hotel: "호텔",
-  shop: "샵",
-};
-
-const TYPE_COLORS: Record<PartnerType, string> = {
-  hospital: "bg-red-100 text-red-700",
-  clinic: "bg-pink-100 text-pink-700",
-  restaurant: "bg-orange-100 text-orange-700",
-  hotel: "bg-blue-100 text-blue-700",
-  shop: "bg-purple-100 text-purple-700",
-};
+import type { Partner, PartnerListResponse, PartnerStats } from "@/lib/types";
+import { PARTNER_TYPE_LABELS, PARTNER_TYPE_COLORS } from "@/lib/constants";
+import Pagination from "@/components/ui/pagination";
+import LoadingSpinner from "@/components/ui/loading-spinner";
+import ErrorBanner from "@/components/ui/error-banner";
+import SearchFilter from "@/components/ui/search-filter";
 
 export default function PartnersPage() {
   const [partners, setPartners] = useState<Partner[]>([]);
@@ -28,6 +17,7 @@ export default function PartnersPage() {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [typeFilter, setTypeFilter] = useState<string>("");
   const [activeFilter, setActiveFilter] = useState<string>("");
   const [search, setSearch] = useState("");
@@ -41,8 +31,8 @@ export default function PartnersPage() {
     try {
       const data = await api.get<PartnerStats>("/partners/stats");
       setStats(data);
-    } catch (e) {
-      console.error(e);
+    } catch {
+      setError("통계를 불러오는데 실패했습니다.");
     }
   }
 
@@ -60,8 +50,9 @@ export default function PartnersPage() {
       const data = await api.get<PartnerListResponse>(`/partners?${params}`);
       setPartners(data.items);
       setTotal(data.total);
-    } catch (e) {
-      console.error(e);
+      setError(null);
+    } catch {
+      setError("제휴처를 불러오는데 실패했습니다.");
     } finally {
       setLoading(false);
     }
@@ -91,6 +82,8 @@ export default function PartnersPage() {
         </Link>
       </div>
 
+      <ErrorBanner message={error} />
+
       {/* Stats */}
       {stats && (
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
@@ -119,44 +112,41 @@ export default function PartnersPage() {
         </div>
       )}
 
-      {/* Filters */}
-      <div className="bg-white rounded-xl p-4 shadow-sm mb-4">
-        <div className="flex flex-wrap gap-3 items-center">
-          <input
-            type="text"
-            placeholder="업체명 검색..."
-            value={search}
-            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-            className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-naruu-500 focus:border-transparent w-64"
-          />
-          <select
-            value={typeFilter}
-            onChange={(e) => { setTypeFilter(e.target.value); setPage(1); }}
-            className="px-3 py-2 border border-gray-200 rounded-lg text-sm"
-          >
-            <option value="">전체 유형</option>
-            <option value="hospital">병원</option>
-            <option value="clinic">클리닉</option>
-            <option value="restaurant">레스토랑</option>
-            <option value="hotel">호텔</option>
-            <option value="shop">샵</option>
-          </select>
-          <select
-            value={activeFilter}
-            onChange={(e) => { setActiveFilter(e.target.value); setPage(1); }}
-            className="px-3 py-2 border border-gray-200 rounded-lg text-sm"
-          >
-            <option value="">전체 상태</option>
-            <option value="active">활성</option>
-            <option value="inactive">비활성</option>
-          </select>
-        </div>
-      </div>
+      <SearchFilter
+        searchValue={search}
+        onSearch={(v) => { setSearch(v); setPage(1); }}
+        placeholder="업체명 검색..."
+        filters={[
+          {
+            value: typeFilter,
+            onChange: (v) => { setTypeFilter(v); setPage(1); },
+            options: [
+              { value: "hospital", label: "병원" },
+              { value: "clinic", label: "클리닉" },
+              { value: "restaurant", label: "레스토랑" },
+              { value: "hotel", label: "호텔" },
+              { value: "shop", label: "샵" },
+            ],
+            placeholder: "전체 유형",
+            ariaLabel: "유형 필터",
+          },
+          {
+            value: activeFilter,
+            onChange: (v) => { setActiveFilter(v); setPage(1); },
+            options: [
+              { value: "active", label: "활성" },
+              { value: "inactive", label: "비활성" },
+            ],
+            placeholder: "전체 상태",
+            ariaLabel: "상태 필터",
+          },
+        ]}
+      />
 
       {/* Partners List */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {loading ? (
-          <div className="col-span-full text-center py-8 text-gray-400">로딩 중...</div>
+          <div className="col-span-full"><LoadingSpinner /></div>
         ) : partners.length === 0 ? (
           <div className="col-span-full text-center py-8 text-gray-400">등록된 제휴처가 없습니다.</div>
         ) : (
@@ -173,8 +163,8 @@ export default function PartnersPage() {
                     <h3 className="font-semibold text-gray-800">{p.name_ko}</h3>
                     {p.name_ja && <p className="text-xs text-gray-400">{p.name_ja}</p>}
                   </div>
-                  <span className={`text-xs px-2 py-1 rounded-full font-medium ${TYPE_COLORS[p.type]}`}>
-                    {TYPE_LABELS[p.type]}
+                  <span className={`text-xs px-2 py-1 rounded-full font-medium ${PARTNER_TYPE_COLORS[p.type]}`}>
+                    {PARTNER_TYPE_LABELS[p.type]}
                   </span>
                 </div>
 
@@ -201,18 +191,7 @@ export default function PartnersPage() {
         )}
       </div>
 
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between mt-4">
-          <p className="text-xs text-gray-500">
-            전체 {total}건 중 {(page - 1) * perPage + 1}-{Math.min(page * perPage, total)}
-          </p>
-          <div className="flex gap-1">
-            <button onClick={() => setPage(page - 1)} disabled={page <= 1} className="px-3 py-1 text-sm border rounded disabled:opacity-30">이전</button>
-            <button onClick={() => setPage(page + 1)} disabled={page >= totalPages} className="px-3 py-1 text-sm border rounded disabled:opacity-30">다음</button>
-          </div>
-        </div>
-      )}
+      <Pagination page={page} totalPages={totalPages} onPageChange={setPage} total={total} perPage={perPage} unit="개" />
     </AppShell>
   );
 }

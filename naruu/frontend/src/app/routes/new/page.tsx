@@ -9,9 +9,12 @@ import {
   DirectionsRenderer,
   InfoWindow,
 } from "@react-google-maps/api";
+import Link from "next/link";
 import AppShell from "@/components/layout/app-shell";
 import { api } from "@/lib/api";
 import type { Waypoint, PlaceResult } from "@/lib/types";
+import ErrorBanner from "@/components/ui/error-banner";
+import LoadingSpinner from "@/components/ui/loading-spinner";
 
 const DAEGU_CENTER = { lat: 35.8714, lng: 128.5964 };
 const MAP_STYLE = { width: "100%", height: "500px" };
@@ -70,6 +73,7 @@ export default function NewRoutePage() {
   const [aiLoading, setAiLoading] = useState(false);
 
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
 
   // Load Google Maps API key from backend
@@ -83,7 +87,7 @@ export default function NewRoutePage() {
           setMapsApiKey(config.api_key);
         }
       } catch {
-        console.error("Failed to load maps config");
+        setError("지도 설정을 불러오지 못했습니다.");
       } finally {
         setKeyLoaded(true);
       }
@@ -127,8 +131,8 @@ export default function NewRoutePage() {
         { query: searchQuery, lat: DAEGU_CENTER.lat, lng: DAEGU_CENTER.lng }
       );
       setSearchResults(data.places);
-    } catch (err) {
-      console.error("Search failed:", err);
+    } catch {
+      setError("장소 검색에 실패했습니다.");
     } finally {
       setSearching(false);
     }
@@ -252,7 +256,7 @@ export default function NewRoutePage() {
       );
       setAiSuggestion(data.suggestion);
     } catch {
-      alert("AI 추천에 실패했습니다.");
+      setError("AI 추천에 실패했습니다.");
     } finally {
       setAiLoading(false);
     }
@@ -261,7 +265,7 @@ export default function NewRoutePage() {
   // Save route
   const handleSave = async () => {
     if (!nameJa || !nameKo || waypoints.length < 2) {
-      alert("루트명과 최소 2개의 경유지가 필요합니다.");
+      setError("루트명과 최소 2개의 경유지가 필요합니다.");
       return;
     }
     setSaving(true);
@@ -276,9 +280,8 @@ export default function NewRoutePage() {
         is_template: isTemplate,
       });
       router.push("/routes");
-    } catch (err) {
-      console.error("Save failed:", err);
-      alert("루트 저장에 실패했습니다.");
+    } catch {
+      setError("루트 저장에 실패했습니다.");
     } finally {
       setSaving(false);
     }
@@ -296,14 +299,21 @@ export default function NewRoutePage() {
   if (!keyLoaded) {
     return (
       <AppShell>
-        <p className="text-gray-400">설정 로딩 중...</p>
+        <LoadingSpinner text="설정 로딩 중..." />
       </AppShell>
     );
   }
 
   return (
     <AppShell>
-      <h2 className="text-2xl font-bold text-gray-800 mb-6">관광 루트 생성</h2>
+      <div className="flex items-center gap-3 mb-6">
+        <Link href="/routes" className="text-gray-400 hover:text-gray-600">
+          &larr; 목록
+        </Link>
+        <h2 className="text-2xl font-bold text-gray-800">관광 루트 생성</h2>
+      </div>
+
+      <ErrorBanner message={error} />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Panel: Route Info + Waypoint List */}
@@ -316,6 +326,7 @@ export default function NewRoutePage() {
               value={nameJa}
               onChange={(e) => setNameJa(e.target.value)}
               placeholder="ルート名 (日本語) *"
+              aria-label="루트명 (일본어)"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-naruu-500"
             />
             <input
@@ -323,6 +334,7 @@ export default function NewRoutePage() {
               value={nameKo}
               onChange={(e) => setNameKo(e.target.value)}
               placeholder="루트명 (한국어) *"
+              aria-label="루트명 (한국어)"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-naruu-500"
             />
             <div className="flex gap-2">
@@ -541,12 +553,12 @@ export default function NewRoutePage() {
             >
               {saving ? "저장 중..." : "루트 저장"}
             </button>
-            <button
-              onClick={() => router.push("/routes")}
-              className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition"
+            <Link
+              href="/routes"
+              className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition text-center"
             >
               취소
-            </button>
+            </Link>
           </div>
         </div>
 

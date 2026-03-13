@@ -1,9 +1,38 @@
 #!/bin/bash
 # Supabase CLI를 통한 데이터베이스 초기화
+#
+# Required environment variables:
+#   DB_PASSWORD    - PostgreSQL password
+#   DB_HOST        - Database host
+#   SUPABASE_URL   - Supabase project URL
+#   SUPABASE_KEY   - Supabase service role key
 
-SUPABASE_URL="https://cgqukhmqnndwdbmkmjrn.supabase.co"
-SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNncXVraG1xbm5kd2RibWttanJuIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1OTIwNTkyMSwiZXhwIjoyMDc0NzgxOTIxfQ.-olqMJ5sx_LofEGqlePOMK0MnFJT-LLg3_ll0IR3yj4"
-DB_URL="postgresql://postgres:rhkdskatit1@db.cgqukhmqnndwdbmkmjrn.supabase.co:5432/postgres"
+set -euo pipefail
+
+if [ -z "${DB_PASSWORD:-}" ]; then
+    echo "[ERROR] DB_PASSWORD not set"
+    exit 1
+fi
+
+if [ -z "${DB_HOST:-}" ]; then
+    echo "[ERROR] DB_HOST not set"
+    exit 1
+fi
+
+if [ -z "${SUPABASE_URL:-}" ]; then
+    echo "[ERROR] SUPABASE_URL not set"
+    exit 1
+fi
+
+if [ -z "${SUPABASE_KEY:-}" ]; then
+    echo "[ERROR] SUPABASE_KEY not set"
+    exit 1
+fi
+
+DB_USER="${DB_USER:-postgres}"
+DB_PORT="${DB_PORT:-5432}"
+DB_NAME="${DB_NAME:-postgres}"
+DB_URL="postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}"
 
 echo "[*] Connecting to Supabase database..."
 

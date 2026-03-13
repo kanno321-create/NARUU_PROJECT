@@ -21,7 +21,7 @@ export interface CustomerListResponse {
   items: Customer[];
   total: number;
   page: number;
-  page_size: number;
+  per_page: number;
 }
 
 export interface JourneyEvent {

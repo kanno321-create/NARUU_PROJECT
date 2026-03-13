@@ -104,7 +104,7 @@ async def refresh_token(body: RefreshRequest, db: AsyncSession = Depends(get_db)
             detail="유효하지 않거나 만료된 리프레시 토큰입니다",
         )
 
-    result = await db.execute(select(User).where(User.id == payload.sub))
+    result = await db.execute(select(User).where(User.id == int(payload.sub)))
     user = result.scalar_one_or_none()
 
     if not user or not user.is_active:

@@ -19,7 +19,9 @@ class Customer(Base, TimestampMixin):
     email: Mapped[str | None] = mapped_column(String(255))
     phone: Mapped[str | None] = mapped_column(String(30))
     line_user_id: Mapped[str | None] = mapped_column(String(100), unique=True, index=True)
-    nationality: Mapped[str] = mapped_column(String(50), default="JP", nullable=False)
+    nationality: Mapped[str] = mapped_column(
+        String(50), default="JP", nullable=False, index=True
+    )
     visa_type: Mapped[str | None] = mapped_column(String(50))
     first_visit_date: Mapped[Optional[date]] = mapped_column(Date)
     preferred_language: Mapped[str] = mapped_column(String(10), default="ja", nullable=False)

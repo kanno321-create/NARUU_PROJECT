@@ -153,10 +153,12 @@ export default function AIPage() {
       </div>
 
       {/* Context Tabs */}
-      <div className="flex gap-1 mb-4 bg-gray-100 rounded-lg p-1 w-fit">
+      <div className="flex gap-1 mb-4 bg-gray-100 rounded-lg p-1 w-fit" role="tablist" aria-label="AI 모드 선택">
         {(Object.keys(CONTEXT_LABELS) as ChatContext[]).map((ctx) => (
           <button
             key={ctx}
+            role="tab"
+            aria-selected={context === ctx}
             onClick={() => setContext(ctx)}
             className={`px-3 py-1.5 text-xs rounded-md transition ${
               context === ctx
@@ -223,6 +225,7 @@ export default function AIPage() {
             <select
               value={translateFrom}
               onChange={(e) => setTranslateFrom(e.target.value)}
+              aria-label="원본 언어"
               className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
             >
               <option value="ja">일본어</option>
@@ -233,6 +236,7 @@ export default function AIPage() {
             <select
               value={translateTo}
               onChange={(e) => setTranslateTo(e.target.value)}
+              aria-label="번역 대상 언어"
               className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
             >
               <option value="ko">한국어</option>
@@ -244,6 +248,7 @@ export default function AIPage() {
             value={translateText}
             onChange={(e) => setTranslateText(e.target.value)}
             placeholder="번역할 텍스트를 입력하세요..."
+            aria-label="번역할 텍스트"
             rows={4}
             className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-naruu-500 outline-none"
           />
@@ -315,6 +320,7 @@ export default function AIPage() {
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="메시지를 입력하세요... (Enter 전송, Shift+Enter 줄바꿈)"
+                aria-label="AI 채팅 메시지 입력"
                 rows={1}
                 className="flex-1 px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-naruu-500 outline-none resize-none"
               />

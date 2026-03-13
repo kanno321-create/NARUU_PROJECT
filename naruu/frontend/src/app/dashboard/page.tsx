@@ -1,9 +1,16 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import AppShell from "@/components/layout/app-shell";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/stores/auth-store";
+import {
+  RESERVATION_TYPE_LABELS,
+  RESERVATION_STATUS_LABELS,
+  PIE_COLORS,
+} from "@/lib/constants";
+import LoadingSpinner from "@/components/ui/loading-spinner";
+import ErrorBanner from "@/components/ui/error-banner";
 import {
   BarChart,
   Bar,
@@ -59,22 +66,6 @@ interface ChartData {
   }[];
 }
 
-const PIE_COLORS = ["#3b82f6", "#ef4444", "#f59e0b", "#10b981", "#8b5cf6"];
-
-const TYPE_LABELS: Record<string, string> = {
-  medical: "의료",
-  tourism: "관광",
-  restaurant: "식당",
-  goods: "굿즈",
-};
-
-const STATUS_LABELS: Record<string, string> = {
-  pending: "대기",
-  confirmed: "확정",
-  completed: "완료",
-  cancelled: "취소",
-};
-
 export default function DashboardPage() {
   const user = useAuthStore((s) => s.user);
   const [kpi, setKpi] = useState<KPI | null>(null);
@@ -82,6 +73,7 @@ export default function DashboardPage() {
   const [aiInsights, setAiInsights] = useState("");
   const [insightsLoading, setInsightsLoading] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -92,8 +84,8 @@ export default function DashboardPage() {
         ]);
         setKpi(kpiData);
         setCharts(chartData);
-      } catch (err) {
-        console.error("Dashboard load failed:", err);
+      } catch {
+        setError("데이터를 불러오는데 실패했습니다.");
       } finally {
         setLoading(false);
       }
@@ -121,7 +113,7 @@ export default function DashboardPage() {
   if (loading) {
     return (
       <AppShell>
-        <p className="text-gray-400">대시보드 로딩 중...</p>
+        <LoadingSpinner text="대시보드 로딩 중..." />
       </AppShell>
     );
   }
@@ -144,6 +136,8 @@ export default function DashboardPage() {
         </button>
       </div>
 
+      <ErrorBanner message={error} />
+
       {/* AI Insights */}
       {aiInsights && (
         <div className="mb-6 bg-gradient-to-r from-violet-50 to-blue-50 rounded-xl p-5 shadow-sm">
@@ -152,7 +146,7 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* KPI Cards — Row 1 */}
+      {/* KPI Cards -- Row 1 */}
       {kpi && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <KPICard
@@ -186,7 +180,7 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* KPI Cards — Row 2 */}
+      {/* KPI Cards -- Row 2 */}
       {kpi && (
         <div className="grid grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
           <MiniKPI label="총 고객" value={kpi.total_customers} />
@@ -223,7 +217,7 @@ export default function DashboardPage() {
                   tickFormatter={(v) => `¥${(v / 10000).toFixed(0)}万`}
                 />
                 <Tooltip
-                  formatter={(value: number) => [`¥${value.toLocaleString()}`, "매출"]}
+                  formatter={(value) => [`¥${Number(value ?? 0).toLocaleString()}`, "매출"]}
                   labelFormatter={(label) => {
                     const [y, m] = label.split("-");
                     return `${y}년 ${parseInt(m)}월`;
@@ -256,8 +250,9 @@ export default function DashboardPage() {
                     paddingAngle={5}
                     dataKey="count"
                     nameKey="type"
-                    label={({ type, count }: { type: string; count: number }) =>
-                      `${TYPE_LABELS[type] || type} ${count}`
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    label={(props: any) =>
+                      `${RESERVATION_TYPE_LABELS[props.type] || props.type} ${props.count}`
                     }
                   >
                     {charts.reservation_by_type.map((_, i) => (
@@ -265,9 +260,10 @@ export default function DashboardPage() {
                     ))}
                   </Pie>
                   <Tooltip
-                    formatter={(value: number, name: string) => [
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    formatter={(value: any, name: any) => [
                       `${value}건`,
-                      TYPE_LABELS[name] || name,
+                      RESERVATION_TYPE_LABELS[name] || name,
                     ]}
                   />
                 </PieChart>
@@ -298,7 +294,7 @@ export default function DashboardPage() {
                     tick={{ fontSize: 12 }}
                     width={60}
                   />
-                  <Tooltip formatter={(value: number) => [`${value}명`, "고객"]} />
+                  <Tooltip formatter={(value) => [`${value}명`, "고객"]} />
                   <Bar dataKey="count" fill="#3b82f6" radius={[0, 4, 4, 0]} />
                 </BarChart>
               </ResponsiveContainer>
@@ -319,7 +315,7 @@ export default function DashboardPage() {
                   >
                     <div>
                       <span className="font-medium text-gray-800">
-                        {TYPE_LABELS[r.type] || r.type}
+                        {RESERVATION_TYPE_LABELS[r.type] || r.type}
                       </span>
                       <span className="text-gray-400 ml-2">#{r.customer_id}</span>
                     </div>
@@ -335,7 +331,7 @@ export default function DashboardPage() {
                             : "bg-gray-100 text-gray-600"
                         }`}
                       >
-                        {STATUS_LABELS[r.status] || r.status}
+                        {RESERVATION_STATUS_LABELS[r.status] || r.status}
                       </span>
                       <span className="text-xs text-gray-400">
                         {new Date(r.date).toLocaleDateString("ko-KR")}
@@ -408,7 +404,7 @@ function KPICard({
     <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
       <div className="flex items-center justify-between mb-2">
         <p className="text-sm text-gray-500">{title}</p>
-        <span className="text-xl">{icon}</span>
+        <span className="text-xl" aria-hidden="true">{icon}</span>
       </div>
       <p className="text-2xl font-bold text-gray-800">{value}</p>
       <p

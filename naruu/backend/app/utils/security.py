@@ -5,7 +5,7 @@ from typing import Optional
 
 import jwt
 from passlib.context import CryptContext
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 from app.config import get_settings
 
@@ -14,7 +14,7 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 class TokenPayload(BaseModel):
-    sub: int
+    sub: str
     username: str
     role: str
     type: str  # "access" or "refresh"
@@ -40,7 +40,7 @@ def create_access_token(user_id: int, username: str, role: str) -> str:
     now = datetime.now(timezone.utc)
     expire = now + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     payload = {
-        "sub": user_id,
+        "sub": str(user_id),
         "username": username,
         "role": role,
         "type": "access",
@@ -54,7 +54,7 @@ def create_refresh_token(user_id: int, username: str, role: str) -> str:
     now = datetime.now(timezone.utc)
     expire = now + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
     payload = {
-        "sub": user_id,
+        "sub": str(user_id),
         "username": username,
         "role": role,
         "type": "refresh",
@@ -79,7 +79,7 @@ def decode_token(token: str) -> Optional[TokenPayload]:
             algorithms=[settings.JWT_ALGORITHM],
         )
         return TokenPayload(**payload)
-    except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
+    except (jwt.ExpiredSignatureError, jwt.InvalidTokenError, ValidationError):
         return None
 
 

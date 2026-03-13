@@ -3,7 +3,7 @@
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -58,8 +58,7 @@ class GoodsOut(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class GoodsListResponse(BaseModel):
@@ -189,7 +188,7 @@ async def create_goods(
 ):
     goods = Goods(**data.model_dump())
     db.add(goods)
-    await db.commit()
+    await db.flush()
     await db.refresh(goods)
     return GoodsOut.model_validate(goods)
 
@@ -210,7 +209,7 @@ async def update_goods(
     for key, value in update_data.items():
         setattr(goods, key, value)
 
-    await db.commit()
+    await db.flush()
     await db.refresh(goods)
     return GoodsOut.model_validate(goods)
 
@@ -233,7 +232,7 @@ async def adjust_stock(
         raise HTTPException(400, f"재고 부족: 현재 {goods.stock_quantity}, 조정 {data.adjustment}")
 
     goods.stock_quantity = new_qty
-    await db.commit()
+    await db.flush()
     await db.refresh(goods)
     return GoodsOut.model_validate(goods)
 
@@ -250,5 +249,5 @@ async def delete_goods(
         raise HTTPException(404, "Goods not found")
 
     goods.is_active = False
-    await db.commit()
+    await db.flush()
     return {"message": "Goods deactivated"}

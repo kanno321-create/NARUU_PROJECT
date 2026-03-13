@@ -42,7 +42,7 @@ async def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    result = await db.execute(select(User).where(User.id == payload.sub))
+    result = await db.execute(select(User).where(User.id == int(payload.sub)))
     user = result.scalar_one_or_none()
 
     if not user or not user.is_active:

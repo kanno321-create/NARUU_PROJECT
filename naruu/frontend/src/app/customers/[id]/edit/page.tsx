@@ -6,6 +6,8 @@ import Link from "next/link";
 import AppShell from "@/components/layout/app-shell";
 import { api } from "@/lib/api";
 import type { Customer } from "@/lib/types";
+import LoadingSpinner from "@/components/ui/loading-spinner";
+import ErrorBanner from "@/components/ui/error-banner";
 
 const AVAILABLE_TAGS = ["VIP", "리피터", "성형", "피부과", "관광", "굿즈", "대구투어"];
 
@@ -101,7 +103,7 @@ export default function EditCustomerPage() {
   if (loading) {
     return (
       <AppShell>
-        <div className="text-center py-12 text-gray-400">로딩 중...</div>
+        <LoadingSpinner text="고객 정보 로딩 중..." />
       </AppShell>
     );
   }
@@ -122,11 +124,7 @@ export default function EditCustomerPage() {
         onSubmit={handleSubmit}
         className="bg-white rounded-xl p-6 shadow-sm max-w-2xl space-y-5"
       >
-        {error && (
-          <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
-            {error}
-          </div>
-        )}
+        <ErrorBanner message={error} />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Field
@@ -163,10 +161,11 @@ export default function EditCustomerPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="edit-nationality" className="block text-sm font-medium text-gray-700 mb-1">
               국적
             </label>
             <select
+              id="edit-nationality"
               value={form.nationality}
               onChange={(e) => updateField("nationality", e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-naruu-500 outline-none"
@@ -205,6 +204,7 @@ export default function EditCustomerPage() {
                   key={tag}
                   type="button"
                   onClick={() => toggleTag(tag)}
+                  aria-pressed={selected}
                   className={`px-3 py-1 rounded-full text-xs font-medium transition ${
                     selected
                       ? "bg-naruu-600 text-white"
@@ -219,10 +219,11 @@ export default function EditCustomerPage() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="edit-notes" className="block text-sm font-medium text-gray-700 mb-1">
             메모
           </label>
           <textarea
+            id="edit-notes"
             value={form.notes}
             onChange={(e) => updateField("notes", e.target.value)}
             rows={3}
@@ -261,12 +262,14 @@ function Field({
   onChange: (v: string) => void;
   type?: string;
 }) {
+  const fieldId = `edit-${label.replace(/[^a-zA-Z가-힣]/g, "-").toLowerCase()}`;
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">
+      <label htmlFor={fieldId} className="block text-sm font-medium text-gray-700 mb-1">
         {label}
       </label>
       <input
+        id={fieldId}
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}

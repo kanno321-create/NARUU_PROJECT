@@ -1,9 +1,9 @@
 """Order/sales management: CRUD, payment status tracking."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import func, select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -53,8 +53,7 @@ class OrderOut(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class OrderListResponse(BaseModel):
@@ -110,7 +109,7 @@ async def order_summary(
     _user: User = Depends(get_current_user),
 ):
     """Monthly revenue summary."""
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     y = year or now.year
     m = month or now.month
 
@@ -189,7 +188,7 @@ async def create_order(
 
     order = Order(**order_data)
     db.add(order)
-    await db.commit()
+    await db.flush()
     await db.refresh(order)
     return OrderOut.model_validate(order)
 
@@ -215,6 +214,6 @@ async def update_order(
     for key, value in update_data.items():
         setattr(order, key, value)
 
-    await db.commit()
+    await db.flush()
     await db.refresh(order)
     return OrderOut.model_validate(order)

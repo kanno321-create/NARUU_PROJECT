@@ -1,11 +1,11 @@
 """Package management: CRUD, quote builder, AI recommendation, exchange rate."""
 
 import enum
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -63,8 +63,7 @@ class PackageOut(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class PackageListResponse(BaseModel):
@@ -136,10 +135,22 @@ class RecommendResponse(BaseModel):
 # Fallback rate — updated daily in production via external API
 DEFAULT_KRW_PER_JPY = 9.5  # 1 JPY ≈ 9.5 KRW (approximate)
 
+# In-memory cache with 1-hour TTL
+_exchange_cache: dict = {"rate": None, "fetched_at": None}
+
 
 async def get_exchange_rate() -> float:
-    """Get JPY→KRW exchange rate. Uses external API with fallback."""
+    """Get JPY->KRW exchange rate. Uses external API with 1-hour cache and fallback."""
     import httpx
+
+    now = datetime.now(timezone.utc)
+    cached_rate = _exchange_cache["rate"]
+    cached_at = _exchange_cache["fetched_at"]
+
+    if cached_rate is not None and cached_at is not None:
+        elapsed = (now - cached_at).total_seconds()
+        if elapsed < 3600:
+            return cached_rate
 
     try:
         async with httpx.AsyncClient(timeout=5.0) as client:
@@ -148,9 +159,16 @@ async def get_exchange_rate() -> float:
             )
             if resp.status_code == 200:
                 data = resp.json()
-                return data["rates"].get("KRW", DEFAULT_KRW_PER_JPY)
+                rate = data["rates"].get("KRW", DEFAULT_KRW_PER_JPY)
+                _exchange_cache["rate"] = rate
+                _exchange_cache["fetched_at"] = now
+                return rate
     except Exception:
         pass
+
+    # If cache has a stale value, return it rather than default
+    if cached_rate is not None:
+        return cached_rate
     return DEFAULT_KRW_PER_JPY
 
 
@@ -232,7 +250,7 @@ async def create_package(
     """Create a new package."""
     pkg = Package(**data.model_dump())
     db.add(pkg)
-    await db.commit()
+    await db.flush()
     await db.refresh(pkg)
     return PackageOut.model_validate(pkg)
 
@@ -254,7 +272,7 @@ async def update_package(
     for key, value in update_data.items():
         setattr(pkg, key, value)
 
-    await db.commit()
+    await db.flush()
     await db.refresh(pkg)
     return PackageOut.model_validate(pkg)
 
@@ -272,7 +290,7 @@ async def delete_package(
         raise HTTPException(404, "Package not found")
 
     pkg.is_active = False
-    await db.commit()
+    await db.flush()
     return {"message": "Package deactivated"}
 
 
@@ -349,7 +367,7 @@ async def build_quote(
         converted_currency=converted_currency,
         customer_name=req.customer_name,
         notes=req.notes,
-        generated_at=datetime.utcnow(),
+        generated_at=datetime.now(timezone.utc),
     )
 
 
